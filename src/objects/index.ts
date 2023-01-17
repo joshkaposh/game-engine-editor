@@ -1,3 +1,4 @@
+import { Indexable } from "../components/editor/EditObject";
 import Depth1,{EditorDepth1} from "./Depth1";
 import Depth2, { EditorDepth2 } from "./Depth2";
 import Depth3,{EditorDepth3} from './Depth3'
@@ -25,7 +26,9 @@ const objects = {
     Depth3
 }
 
-export const editors = {
+export const editors: {
+    [key: string]: Indexable
+} = {
     Depth1:EditorDepth1,
     Depth2:EditorDepth2,
     Depth3:EditorDepth3,
