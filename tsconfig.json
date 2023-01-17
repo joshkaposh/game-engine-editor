@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "lib": ["DOM","ES6","DOM.Iterable"],
+      "jsx": "preserve",
+      "jsxImportSource": "solid-js",
+      "module": "commonjs",
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "strict": true,
+      
+    },
+    "include": ["src"],
+    "exclude": ["node_modules"]
+  }
+  

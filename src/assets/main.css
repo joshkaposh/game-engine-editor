@@ -1,0 +1,21 @@
+html {
+    box-sizing: border-box;
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    padding-inline: 0;
+    padding-block: 0;
+}
+
+ul,ol {
+    list-style-type: none;
+}
+
+.edit-object {
+    /* margin-left:0.15rem; */
+    /* margin-top:0.15rem; */
+    margin: 0.15rem 0 0.15rem 0.15rem;
+}
+
