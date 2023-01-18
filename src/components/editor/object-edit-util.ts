@@ -1,8 +1,8 @@
 import { createStore, SetStoreFunction,produce } from "solid-js/store";
-import type { Indexable, Paths } from "./EditObject";
-import { ClassKeys, editors } from "../../objects";
+import type { Paths } from "./EditObject";
+import objects, { ClassKeys } from "../../objects";
 export class ObjectBuilder {
-    #root!: Indexable;
+    #root!: {[key:string]:any};
     #type!: ClassKeys;
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
@@ -12,21 +12,18 @@ export class ObjectBuilder {
     }
 
     getPath(key:string) {
-        // if (!this.#paths[key]) {
-        //     throw new Error('Could not find path of type [%s]',key)
-        // }
         return this.#paths[key]
     }
     
-    setDefaultConfig(type:ClassKeys,root: Indexable) {
+    setDefaultConfig(type:ClassKeys) {
         this.#type = type;
-        this.#root = root;
+        this.#root = objects[type].editor.config();
         const [paths, setPaths] = createStore<Paths>({})
         this.#paths = paths;
         this.#setPaths = setPaths;
         setRootKeys(this.#root, setPaths)
         console.log('Builder set defaultConfig to %s', type);
-        console.table(root)
+        console.table(this.#root)
     }
 
     switchObjectConfig(type: ClassKeys) {
@@ -36,14 +33,14 @@ export class ObjectBuilder {
             //* do nothing
             return;
         }
-        this.setDefaultConfig(type,editors[type].config())
+        this.setDefaultConfig(type)
     }
 
-    addToPath(rootKey:string,propertyKey:string) {
+    addToPath(rootKey: string, propertyKey: string) {
         this.#setPaths(produce((paths => {
             paths[rootKey].push(propertyKey)
         })))
-        console.log('Builder: Path',this.#paths[rootKey]);
+        console.log('Builder: Paths',this.#paths);
         
     }
 
@@ -53,39 +50,45 @@ export class ObjectBuilder {
         this.#setPaths = setPaths
     }
 
-    
-    editProperty(key:string,value:unknown) {
+    edit(key: string, value: string | number | boolean,rootKey?:string) {
+        if (!rootKey) {
+            this.#editProperty(key, value)
+            return;
+        }
+        this.#editPropertyPath(rootKey,key,value)
+    }
+
+    #editProperty(key:string,value:unknown) {
         this.#root[key] = value
     }
-    editPropertyPath = (rootKey: string, property: string, value: string | number | boolean) => {
+    #editPropertyPath = (rootKey: string, key: string, value: string | number | boolean) => {
         const path = this.#paths[rootKey]
-        console.log('EditProperty::', rootKey, property, value);
-        console.log('EditProperty:: Path',path);
-        
+        console.log('EditProperty::', rootKey, key, value);
+        console.log('EditProperty:: Paths',this.#paths);
+
         if (path.length === 0) {
-            this.#root[rootKey][property] = value
-            
-        } else {
-            let temp = this.#root[rootKey]
-            for (let i = 0; i < path.length; i++) {
-                temp = temp[path[i]]
-            }
-            temp[property] = value;
+            this.#root[rootKey][key] = value
+            return;   
         }
+        let temp = this.#root[rootKey]
+        for (let i = 0; i < path.length; i++) {
+            temp = temp[path[i]]
+        }
+        temp[key] = value;
         console.log('EditPropery::Root',this.#root);
     
     }
 
     build() {
         console.log('---Building Object---');
-        console.table(this.#root);
-        editors[this.#type].create(this.#root)
+        // console.table(this.#root);
+        objects[this.#type]['editor'].create(this.#root as any)
         
     }
 }
 
 
-export const setRootKeys = (root:Indexable,setPaths:SetStoreFunction<Paths>) => {
+export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
     const entries = Object.entries(root)
     for (const entry of entries) {
         if (canRecurse(entry[1])) {

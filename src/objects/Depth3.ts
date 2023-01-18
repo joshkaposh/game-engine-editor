@@ -15,11 +15,16 @@ export const EditorDepth3:EditorObject<Depth3,Depth3Config> = {
     config: (): Depth3Config => ({inner1:{inner2:{inner3:''}}})
 }
 
-export default class Depth3 extends GameObject implements Depth3Config {
+class Depth3 extends GameObject implements Depth3Config {
     inner1: Inner;
     constructor(inner1: Inner) {
         super();
         this.inner1 = inner1;
         
     }
+}
+
+export default {
+    obj: Depth3,
+    editor: EditorDepth3
 }

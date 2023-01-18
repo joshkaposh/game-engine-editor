@@ -11,7 +11,7 @@ export const EditorDepth1:EditorObject<Depth1,Depth1Config> = {
     config: (): Depth1Config => ({color:'black',radius:5,visible:true})
 }
 
-export default class Depth1 extends GameObject {
+class Depth1 extends GameObject {
     color: string;
     radius: number;
     visible: boolean;
@@ -21,4 +21,9 @@ export default class Depth1 extends GameObject {
         this.radius = radius;
         this.visible = visible;
     }
+}
+
+export default {
+    obj: Depth1,
+    editor: EditorDepth1
 }
