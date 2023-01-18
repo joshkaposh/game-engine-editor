@@ -1,4 +1,4 @@
-import type {Component,Accessor, } from 'solid-js'
+import {Component,Accessor, Setter, createEffect, } from 'solid-js'
 import type { ClassKeys, Configs } from '../../objects';
 import { createSignal, Show, onMount } from "solid-js";
 import ObjectBuilder from './ObjectBuilder';
@@ -14,34 +14,25 @@ const DisplayConfig: Component<{
 }
 
 const ConfigureObject: Component<{
-    config: Configs;
     builder: ObjectBuilder;
     select: (type: ClassKeys) => void;
-    selected:Accessor<ClassKeys | undefined>
+    selected: Accessor<ClassKeys | undefined>
 }> = (props) => {
-    // onMount(() => {
-        // props.builder.setDefaultConfig(props.selected()!)
-        // console.log('Mounted!');
-    // })
     
     return <>
-        <DisplayConfig config={props.config} />
+        <DisplayConfig config={props.builder!.root} />
         <SelectObject select={props.select} />
         <EditObjectForm
             type={props.selected()!}
-            builder={props.builder}
-            config={props.config}
+            builder={props.builder!}
         />
     </>
-}
+    }
 
-const Editor: Component = () => {
+const createSignals = () => {
     const [selected, setSelected] = createSignal<ClassKeys>()
-    const builder = new ObjectBuilder();
-
-    const selectObject = (type: ClassKeys) => {
-        builder.switchObjectConfig(type)
-
+    const [builder,setBuilder] = createSignal<ObjectBuilder>()
+    const select = (type: ClassKeys) => {
         if (type === selected()) {
             setSelected(undefined);
             return;
@@ -49,17 +40,35 @@ const Editor: Component = () => {
         setSelected(type)
         return;
     }
-    // TODO: figure out strategy to rerender when root changes
+
+    createEffect(() => {
+        if (!selected()) {
+            setBuilder();
+            return
+        }
+        setBuilder(new ObjectBuilder(selected()!));
+        return
+    })
+
+    return {
+        builder,
+        selected,
+        select,
+    }
+
+}
+
+const Editor: Component = () => {
+    const {selected,builder,select} = createSignals()
+
     return <div class='editor'>
         <h2>Selected: {selected()}</h2>
-        <Show when={selected()} fallback={<SelectObject select={selectObject} />}>
-            {() => <ConfigureObject
-                builder={builder}
-                config={builder.root}
-                select={selectObject}
+        <Show when={selected() && builder()} fallback={<SelectObject select={select} />}>
+            <ConfigureObject
+                builder={builder()!}
+                select={select}
                 selected={selected}
-            
-            />}
+            />
         </Show>
     </div>
 }

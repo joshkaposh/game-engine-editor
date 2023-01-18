@@ -9,44 +9,58 @@ import CreateObjectBtn from "../input/CreateObjectBtn";
 export type Paths = { [key: string]: string[] }
 export type UnknownObject = { [key: string]: unknown }
 
-interface EditObjectHanderProps {
+interface FormProps {
     type: ClassKeys;
     builder:ObjectBuilder
 }
 
-type EditObjectProps = EditObjectHanderProps & {
-    config: UnknownObject;
-    rootKey?: string;
-    depth: number
+type TrackingProps = FormProps & {
+    depth: number;
+    rootKey?: string
 }
-type RecurseObjectProps = EditObjectHanderProps & EditObjectProps & {
+
+type FilterEntryProps = TrackingProps & {
+    entry: [string, any]
+}
+
+type FilterEntriesProps = TrackingProps & {
+    config: UnknownObject;
+}
+type RecurseObjectProps = FilterEntriesProps & {
     entry: [string, UnknownObject]
 }
 
-const EditObjectForm: Component<{
-    type: ClassKeys;
-    builder: ObjectBuilder
-    config: UnknownObject;
-}> = (props) => {
-
+const ObjectForm: Component<FormProps> = (props) => {
     return <form >
         <h2>EditObject</h2>
-        <Entries
+        <FilterEntries
             depth={0}
             type={props.type}
             builder={props.builder}
-            config={props.config}
+            config={props.builder.root}
         />
     </form>
-    }
+}
 
-const FilterEntry: Component<{
-    entry: [string, any]
-    builder: ObjectBuilder;
-    depth: number;
-    type: ClassKeys
-    rootKey?: string
-    }> = (props) => {
+const FilterEntries: Component<FilterEntriesProps> = (props) => {
+        return <>
+            <For each={Object.entries(props.config)}>{(entry) => (
+                <FilterEntry
+                    entry={entry}
+                    type={props.type}
+                    depth={props.depth}
+                    builder={props.builder}
+                    rootKey={props.rootKey}
+                />
+            )}
+            </For>
+            <Show when={props.depth === 0}>
+                <CreateObjectBtn type={props.type} builder={props.builder} />
+            </Show>
+        </>
+}
+
+const FilterEntry: Component<FilterEntryProps> = (props) => {
         return (<>
             <Label for={props.entry[0]} />
             <Switch>
@@ -65,27 +79,9 @@ const FilterEntry: Component<{
                 />
             </Switch>
         </>)
-    }
-
-
-const Entries: Component<EditObjectProps> = (props) => {
-    return <>
-        <For each={Object.entries(props.config)}>{(entry) => (
-            <FilterEntry
-                entry={entry}
-                type={props.type}
-                depth={props.depth}
-                builder={props.builder}
-                rootKey={props.rootKey}
-            />
-        )}
-        </For>
-        <Show when={props.depth === 0}>
-            <CreateObjectBtn type={props.type} builder={props.builder} />
-        </Show>
-    </>
-    
 }
+
+
 
 const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
     onMount(() => {
@@ -95,7 +91,7 @@ const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
     })
 
     return <Match when={canRecurse(props.entry[1])}>
-        <Entries
+        <FilterEntries
         config={props.entry[1]}
         depth={props.depth + 1}
         type={props.type}
@@ -103,7 +99,7 @@ const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
         rootKey={props.rootKey}
         />
     </Match>
-    }
+}
 
 
-export default EditObjectForm;
+export default ObjectForm;

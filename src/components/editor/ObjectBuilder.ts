@@ -19,6 +19,10 @@ export default class ObjectBuilder {
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
 
+    constructor(type:ClassKeys) {
+        this.#setDefaultConfig(type);
+    }
+
     get root() {
     return this.#root;
     }
@@ -27,7 +31,7 @@ export default class ObjectBuilder {
         return this.#paths[key]
     }
     
-    setDefaultConfig(type:ClassKeys) {
+    #setDefaultConfig(type:ClassKeys) {
         this.#type = type;
         this.#root = objects[type].editor.config();
         const [paths, setPaths] = createStore<Paths>({})
@@ -41,7 +45,7 @@ export default class ObjectBuilder {
             //* do nothing
             return;
         }
-        this.setDefaultConfig(type)
+        this.#setDefaultConfig(type)
         console.log('Builder switching object type: %s',type);
         console.table(this.#root)
     }
