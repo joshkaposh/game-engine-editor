@@ -6,7 +6,7 @@ type Depth1Config = {
     visible: boolean;
 }
 
-class Depth1 extends GameObject {
+class Depth1 extends GameObject implements Depth1Config {
     color: string;
     radius: number;
     visible: boolean;
@@ -21,7 +21,7 @@ class Depth1 extends GameObject {
 export default {
     obj: Depth1,
     editor: new EditorObject({
-        create: (config: Depth1Config) => new Depth1(config.color, config.radius, config.visible),
-        config:(): Depth1Config => ({color:'black',radius:5,visible:true})
+        create: (config) => new Depth1(config.color, config.radius, config.visible),
+        config:{color:'black',radius:5,visible:true} satisfies Depth1Config
     })
 }

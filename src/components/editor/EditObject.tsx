@@ -3,7 +3,7 @@ import type { ClassKeys } from "../../objects";
 import { Switch, Match, For, onMount, Show } from "solid-js";
 import { Label } from "../input/Input";
 import MatchPrimitives from "./form/Primitives";
-import {canRecurse, ObjectBuilder} from './object-edit-util'
+import ObjectBuilder,{canRecurse} from "./ObjectBuilder";
 import CreateObjectBtn from "../input/CreateObjectBtn";
 
 export type Paths = { [key: string]: string[] }

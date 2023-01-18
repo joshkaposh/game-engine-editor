@@ -1,11 +1,9 @@
 import type {Component,Accessor, } from 'solid-js'
-import type { ClassKeys } from '../../objects';
-
+import type { ClassKeys, Configs } from '../../objects';
 import { createSignal, Show, onMount } from "solid-js";
-import objects from "../../objects";
-import { ObjectBuilder } from './object-edit-util';
-import SelectObject from "./SelectObject";
+import ObjectBuilder from './ObjectBuilder';
 import EditObjectForm from './EditObject';
+import SelectObject from "./SelectObject";
 
 const DisplayConfig: Component<{
     config: object;
@@ -16,15 +14,15 @@ const DisplayConfig: Component<{
 }
 
 const ConfigureObject: Component<{
-    config: { [key: string]: unknown };
+    config: Configs;
     builder: ObjectBuilder;
     select: (type: ClassKeys) => void;
     selected:Accessor<ClassKeys | undefined>
 }> = (props) => {
-    onMount(() => {
-        props.builder.setDefaultConfig(props.selected()!)
-        console.log('Mounted!');
-    })
+    // onMount(() => {
+        // props.builder.setDefaultConfig(props.selected()!)
+        // console.log('Mounted!');
+    // })
     
     return <>
         <DisplayConfig config={props.config} />
@@ -41,7 +39,6 @@ const Editor: Component = () => {
     const [selected, setSelected] = createSignal<ClassKeys>()
     const builder = new ObjectBuilder();
 
-    
     const selectObject = (type: ClassKeys) => {
         builder.switchObjectConfig(type)
 
@@ -53,8 +50,6 @@ const Editor: Component = () => {
         return;
     }
     // TODO: figure out strategy to rerender when root changes
-    
-
     return <div class='editor'>
         <h2>Selected: {selected()}</h2>
         <Show when={selected()} fallback={<SelectObject select={selectObject} />}>

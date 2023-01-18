@@ -1,7 +1,7 @@
 import type { Component } from "solid-js";
 import type { ClassKeys } from "../../objects";
 import objects from "../../objects";
-import { ObjectBuilder } from "../editor/object-edit-util";
+import ObjectBuilder from "../editor/ObjectBuilder";
 
 const CreateObjectBtn: Component<{
     type: ClassKeys;

@@ -1,8 +1,20 @@
 import { createStore, SetStoreFunction,produce } from "solid-js/store";
 import type { Paths } from "./EditObject";
-import objects, { ClassKeys } from "../../objects";
-export class ObjectBuilder {
-    #root!: {[key:string]:any};
+import objects, { ClassKeys,Configs } from "../../objects";
+
+export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
+    const entries = Object.entries(root)
+    for (const entry of entries) {
+        if (canRecurse(entry[1])) {
+            setPaths(entry[0],[])
+        }
+    }
+}
+
+export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
+
+export default class ObjectBuilder {
+    #root!: Configs & {[key:string]:any};
     #type!: ClassKeys;
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
@@ -22,26 +34,22 @@ export class ObjectBuilder {
         this.#paths = paths;
         this.#setPaths = setPaths;
         setRootKeys(this.#root, setPaths)
-        console.log('Builder set defaultConfig to %s', type);
-        console.table(this.#root)
     }
 
     switchObjectConfig(type: ClassKeys) {
-        console.log('Builder switching object type: %s',type);
-        
         if (type === this.#type) {
             //* do nothing
             return;
         }
         this.setDefaultConfig(type)
+        console.log('Builder switching object type: %s',type);
+        console.table(this.#root)
     }
 
     addToPath(rootKey: string, propertyKey: string) {
         this.#setPaths(produce((paths => {
             paths[rootKey].push(propertyKey)
         })))
-        console.log('Builder: Paths',this.#paths);
-        
     }
 
     resetPaths() {
@@ -63,8 +71,6 @@ export class ObjectBuilder {
     }
     #editPropertyPath = (rootKey: string, key: string, value: string | number | boolean) => {
         const path = this.#paths[rootKey]
-        console.log('EditProperty::', rootKey, key, value);
-        console.log('EditProperty:: Paths',this.#paths);
 
         if (path.length === 0) {
             this.#root[rootKey][key] = value
@@ -81,21 +87,7 @@ export class ObjectBuilder {
 
     build() {
         console.log('---Building Object---');
-        // console.table(this.#root);
         objects[this.#type]['editor'].create(this.#root as any)
         
     }
 }
-
-
-export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
-    const entries = Object.entries(root)
-    for (const entry of entries) {
-        if (canRecurse(entry[1])) {
-            setPaths(entry[0],[])
-        }
-    }
-}
-
-export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
-
