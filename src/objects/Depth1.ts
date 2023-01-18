@@ -6,11 +6,6 @@ type Depth1Config = {
     visible: boolean;
 }
 
-export const EditorDepth1:EditorObject<Depth1,Depth1Config> = {
-    create: (config:Depth1Config) => new Depth1(config.color,config.radius,config.visible),
-    config: (): Depth1Config => ({color:'black',radius:5,visible:true})
-}
-
 class Depth1 extends GameObject {
     color: string;
     radius: number;
@@ -25,5 +20,8 @@ class Depth1 extends GameObject {
 
 export default {
     obj: Depth1,
-    editor: EditorDepth1
+    editor: new EditorObject({
+        create: (config: Depth1Config) => new Depth1(config.color, config.radius, config.visible),
+        config:(): Depth1Config => ({color:'black',radius:5,visible:true})
+    })
 }

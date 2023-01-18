@@ -1,9 +1,9 @@
 import { Component, Accessor, onMount } from "solid-js";
 import { createSignal } from "solid-js";
 
-type Relay<T extends any> = (value: Accessor<T>) => void;
+type Relay<T extends unknown> = (value: Accessor<T>) => void;
 
-type Input<T extends any> = {
+type Input<T extends unknown> = {
     relay: Relay<T>;
     initialValue?: T;
 }
