@@ -19,12 +19,12 @@ type TrackingProps = FormProps & {
     rootKey?: string
 }
 
-type FilterEntryProps = TrackingProps & {
-    entry: [string, any]
-}
-
 type FilterEntriesProps = TrackingProps & {
     config: UnknownObject;
+}
+
+type FilterEntryProps = TrackingProps & {
+    entry: [string, any]
 }
 type RecurseObjectProps = FilterEntriesProps & {
     entry: [string, UnknownObject]
@@ -43,21 +43,21 @@ const ObjectForm: Component<FormProps> = (props) => {
 }
 
 const FilterEntries: Component<FilterEntriesProps> = (props) => {
-        return <>
-            <For each={Object.entries(props.config)}>{(entry) => (
-                <FilterEntry
-                    entry={entry}
-                    type={props.type}
-                    depth={props.depth}
-                    builder={props.builder}
-                    rootKey={props.rootKey}
-                />
-            )}
-            </For>
-            <Show when={props.depth === 0}>
-                <CreateObjectBtn type={props.type} builder={props.builder} />
-            </Show>
-        </>
+    return <>
+        <For each={Object.entries(props.config)}>{(entry) => (
+            <FilterEntry
+                entry={entry}
+                type={props.type}
+                depth={props.depth}
+                builder={props.builder}
+                rootKey={props.rootKey}
+            />
+        )}
+        </For>
+        <Show when={props.depth === 0}>
+            <CreateObjectBtn type={props.type} builder={props.builder} />
+        </Show>
+    </>
 }
 
 const FilterEntry: Component<FilterEntryProps> = (props) => {
@@ -80,8 +80,6 @@ const FilterEntry: Component<FilterEntryProps> = (props) => {
             </Switch>
         </>)
 }
-
-
 
 const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
     onMount(() => {

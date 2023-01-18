@@ -1,5 +1,5 @@
 import { createStore, SetStoreFunction,produce } from "solid-js/store";
-import type { Paths } from "./EditObject";
+import type { Paths } from "./EditObjectForm";
 import objects, { ClassKeys,Configs } from "../../objects";
 
 export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {

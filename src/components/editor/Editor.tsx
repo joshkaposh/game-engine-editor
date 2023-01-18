@@ -1,33 +1,9 @@
-import {Component,Accessor, Setter, createEffect, } from 'solid-js'
-import type { ClassKeys, Configs } from '../../objects';
-import { createSignal, Show, onMount } from "solid-js";
-import ObjectBuilder from './ObjectBuilder';
-import EditObjectForm from './EditObject';
+import type { Component } from 'solid-js'
+import type { ClassKeys } from '../../objects';
+import { createSignal, Show, createEffect } from "solid-js";
 import SelectObject from "./SelectObject";
-
-const DisplayConfig: Component<{
-    config: object;
-}> = (props) => {
-    return <p>Config: 
-            {JSON.stringify(props.config)}
-    </p>
-}
-
-const ConfigureObject: Component<{
-    builder: ObjectBuilder;
-    select: (type: ClassKeys) => void;
-    selected: Accessor<ClassKeys | undefined>
-}> = (props) => {
-    
-    return <>
-        <DisplayConfig config={props.builder!.root} />
-        <SelectObject select={props.select} />
-        <EditObjectForm
-            type={props.selected()!}
-            builder={props.builder!}
-        />
-    </>
-    }
+import ConfigureObject from './ConfigureObject';
+import ObjectBuilder from './ObjectBuilder';
 
 const createSignals = () => {
     const [selected, setSelected] = createSignal<ClassKeys>()
