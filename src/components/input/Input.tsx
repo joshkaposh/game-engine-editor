@@ -38,6 +38,16 @@ export const Number: Component<NumberProps> = (props) => {
     }} />
 }
 
+
+export const Color: Component<TextProps> = (props) => {
+    const [value,setValue] = createSignal(props.initialValue ?? '#000')
+    return <input type="color" value={props.initialValue} oninput={(e) => {
+        e.preventDefault();
+        setValue(e.currentTarget.value)
+        props.relay(value)
+    }} />
+}
+
 export const Text: Component<TextProps> = (props) => {
     const [value,setValue] = createSignal(props.initialValue ?? '')
     return <input type="text" value={props.initialValue} oninput={(e) => {

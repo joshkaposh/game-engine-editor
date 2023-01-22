@@ -1,5 +1,5 @@
 import type {  Component } from "solid-js";
-import type { ClassKeys } from "../../objects";
+import type { ClassKeys, ClassTypes } from "../../objects";
 import { Switch, Match, For, onMount, Show } from "solid-js";
 import { Label } from "../input/Input";
 import MatchPrimitives from "./form/Primitives";
@@ -9,9 +9,10 @@ import CreateObjectBtn from "../input/CreateObjectBtn";
 export type Paths = { [key: string]: string[] }
 export type UnknownObject = { [key: string]: unknown }
 
-interface FormProps {
+export interface FormProps {
     type: ClassKeys;
-    builder:ObjectBuilder
+    builder: ObjectBuilder
+    add: (type: ClassTypes) => void;
 }
 
 type TrackingProps = FormProps & {
@@ -38,6 +39,7 @@ const ObjectForm: Component<FormProps> = (props) => {
             type={props.type}
             builder={props.builder}
             config={props.builder.root}
+            add={props.add}
         />
     </form>
 }
@@ -51,17 +53,19 @@ const FilterEntries: Component<FilterEntriesProps> = (props) => {
                 depth={props.depth}
                 builder={props.builder}
                 rootKey={props.rootKey}
+                add={props.add}
             />
         )}
         </For>
         <Show when={props.depth === 0}>
-            <CreateObjectBtn type={props.type} builder={props.builder} />
+            <CreateObjectBtn type={props.type} builder={props.builder} add={props.add} />
         </Show>
     </>
 }
 
 const FilterEntry: Component<FilterEntryProps> = (props) => {
-        return (<>
+    return (<>
+        <Show when={props.entry[0] !== 'id'}>
             <Label for={props.entry[0]} />
             <Switch>
                 <MatchPrimitives entry={props.entry} relay={(value) => {
@@ -75,9 +79,11 @@ const FilterEntry: Component<FilterEntryProps> = (props) => {
                     type={props.type}
                     depth={props.depth}
                     builder={props.builder}
+                    add={props.add}
                     rootKey={props.depth === 0 ? props.entry[0] : props.rootKey}
                 />
             </Switch>
+        </Show>
         </>)
 }
 
@@ -90,11 +96,12 @@ const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
 
     return <Match when={canRecurse(props.entry[1])}>
         <FilterEntries
-        config={props.entry[1]}
-        depth={props.depth + 1}
-        type={props.type}
-        builder={props.builder}
-        rootKey={props.rootKey}
+            config={props.entry[1]}
+            depth={props.depth + 1}
+            type={props.type}
+            builder={props.builder}
+            rootKey={props.rootKey}
+            add={props.add}
         />
     </Match>
 }

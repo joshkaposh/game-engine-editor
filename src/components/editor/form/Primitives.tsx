@@ -1,6 +1,6 @@
 import type { Component,Accessor, JSXElement } from "solid-js";
 import { Match } from "solid-js";
-import { Text,Number,Boolean } from "../../input/Input";
+import { Color,Text,Number,Boolean } from "../../input/Input";
 
 const Field: Component<{
     input:JSXElement
@@ -16,6 +16,9 @@ const MatchPrimitives: Component<{
 }> = (props) => {
 
     return (<>
+        <Match when={props.entry[0] === 'color'}>
+            <Field input={<Color initialValue={props.entry[1]} relay={(value) => props.relay(value)} />} />
+        </Match>
         <Match when={typeof props.entry[1] === 'string'}>
             <Field input={<Text initialValue={props.entry[1]} relay={(value) => props.relay(value)} />} />
         </Match>

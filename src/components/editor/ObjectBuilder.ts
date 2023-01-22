@@ -38,6 +38,9 @@ export default class ObjectBuilder {
         this.#paths = paths;
         this.#setPaths = setPaths;
         setRootKeys(this.#root, setPaths)
+        console.log('Builder default object: %s',type);
+        console.table(this.#root)
+
     }
 
     switchObjectConfig(type: ClassKeys) {
@@ -46,8 +49,6 @@ export default class ObjectBuilder {
             return;
         }
         this.#setDefaultConfig(type)
-        console.log('Builder switching object type: %s',type);
-        console.table(this.#root)
     }
 
     addToPath(rootKey: string, propertyKey: string) {

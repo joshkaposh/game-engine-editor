@@ -13,9 +13,22 @@ ul,ol {
     list-style-type: none;
 }
 
+.left {
+    background-color:lightblue
+}
+
+.right {
+    background-color:coral
+}
+
+#editor {
+ display:grid;
+ grid-template-columns: 1fr 4fr 1fr;   
+}
+
 .edit-object {
-    /* margin-left:0.15rem; */
-    /* margin-top:0.15rem; */
     margin: 0.15rem 0 0.15rem 0.15rem;
 }
+
+
 
