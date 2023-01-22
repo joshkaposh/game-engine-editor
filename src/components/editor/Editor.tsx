@@ -6,6 +6,7 @@ import ConfigureObject from './ConfigureObject';
 import Canvas from '../canvas/Canvas';
 import GameEngine from '../../game-engine/initialize';
 import ObjectBuilder from './ObjectBuilder';
+import objects from '../../objects';
 
 const createSignals = () => {
     const [selected, setSelected] = createSignal<ClassKeys>()
@@ -52,7 +53,7 @@ const Play: Component<{
 const Editor: Component<{
     engine: GameEngine
 }> = (props) => {
-    const { selected, builder, select } = createSignals()
+    const { selected, builder, select,setBuilder } = createSignals()
     const [isRunning,setRunning] = createSignal(false)
 
     createEffect(() => {
@@ -63,17 +64,20 @@ const Editor: Component<{
     
     return <div id='editor'>
         <div class='left'>
-        <Play isRunning={isRunning} setRunning={setRunning} />            
+            <Play isRunning={isRunning} setRunning={setRunning} />            
             <h2>Selected: {selected()}</h2>
-            <SelectObject select={select} engine={props.engine} />
-        <Show when={selected() && builder()}>
-            <ConfigureObject
-                builder={builder()!}
-                select={select}
-                selected={selected}
-                create={(type) => props.engine.add(type)}
-            />
-        </Show>
+            <SelectObject types={Object.keys(objects)} select={select} engine={props.engine} />
+            <Show when={selected() && builder()}>
+                <ConfigureObject
+                    builder={builder()!}
+                    select={select}
+                    selected={selected}
+                    create={(type) => {
+                        props.engine.add(type)
+                        setBuilder(new ObjectBuilder(type.goName as ClassKeys))
+                    }}
+                />
+            </Show>
         </div>
         <Canvas engine={props.engine} />
         <span class='right' />

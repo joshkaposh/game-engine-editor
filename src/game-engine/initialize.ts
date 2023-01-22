@@ -3,6 +3,7 @@ import type { ClassTypes } from "../objects";
 import { toArrays } from "../objects"
 import Render2d from "../render/Render2d";
 import Time from "./time/Time";
+
 const bind = (fn:(...args:any) => void,to:object) => fn.bind(to)
 
 class GameEngine {
