@@ -8,22 +8,28 @@ const Canvas: Component<{
     height?: number;
 }> = (props) => {
     let ref: HTMLCanvasElement;
+    let divRef: HTMLDivElement;
+
 
     onMount(() => {
+        ref.width = divRef.clientWidth
+        ref.height = divRef.clientHeight
+
         ref.style.width = '100%';
         ref.style.height = '100%';
         
-        const c = ref.getContext('2d')!
-        c.fillStyle = 'lightgrey'
-        c.fillRect(0, 0, ref.width, ref.height)
+        console.log(ref.width, ref.height);
+
         window.addEventListener('resize', (e) => {
-            console.log(e);
+            ref.width = divRef.clientWidth;
+            ref.height = divRef.clientHeight;
+
         })
 
         props.engine.init(ref);
 
     })
-    return <canvas ref={ref!} id='canvas'></canvas>
+    return <div class='canvas-container' ref={divRef!}><canvas ref={ref!} id='canvas' /></div>
 }
 
 export default Canvas

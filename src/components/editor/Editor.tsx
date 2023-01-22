@@ -1,6 +1,6 @@
-import type { Accessor, Component, JSXElement,  } from 'solid-js'
+import type { Accessor, Component, Setter  } from 'solid-js'
 import type { ClassKeys } from '../../objects';
-import { createSignal, Show, createEffect,Switch, Match } from "solid-js";
+import { createSignal, Show, createEffect } from "solid-js";
 import SelectObject from "./SelectObject";
 import ConfigureObject from './ConfigureObject';
 import Canvas from '../canvas/Canvas';
@@ -20,16 +20,17 @@ const createSignals = () => {
     }
 
     createEffect(() => {
-        if (!selected()) {
-            setBuilder();
+            if (!selected()) {
+                setBuilder();
+                return
+            }
+            setBuilder(new ObjectBuilder(selected()!));
             return
-        }
-        setBuilder(new ObjectBuilder(selected()!));
-        return
     })
 
     return {
         builder,
+        setBuilder,
         selected,
         select,
     }
@@ -38,11 +39,11 @@ const createSignals = () => {
 
 const Play: Component<{
     isRunning: Accessor<boolean>
-    toggle: () => void;
+    setRunning: Setter<boolean>;
 }> = (props) => {
     return <button type='button' onclick={(e) => {
         e.preventDefault();
-        props.toggle();
+        props.setRunning(!props.isRunning());
     }}>
         {props.isRunning() ? 'Stop':'Start'}
     </button>
@@ -53,9 +54,6 @@ const Editor: Component<{
 }> = (props) => {
     const { selected, builder, select } = createSignals()
     const [isRunning,setRunning] = createSignal(false)
-    const toggle = () => {
-        setRunning(!isRunning());
-    }
 
     createEffect(() => {
         isRunning() ?
@@ -65,21 +63,20 @@ const Editor: Component<{
     
     return <div id='editor'>
         <div class='left'>
-        <Play isRunning={isRunning} toggle={toggle} />            
-        <h2>Selected: {selected()}</h2>
-        <Show when={selected() && builder()} fallback={<SelectObject select={select} />}>
+        <Play isRunning={isRunning} setRunning={setRunning} />            
+            <h2>Selected: {selected()}</h2>
+            <SelectObject select={select} engine={props.engine} />
+        <Show when={selected() && builder()}>
             <ConfigureObject
                 builder={builder()!}
                 select={select}
                 selected={selected}
-                add={(type) => props.engine.add(type)}
+                create={(type) => props.engine.add(type)}
             />
         </Show>
         </div>
         <Canvas engine={props.engine} />
-        <div class='right'>
-        </div>
-        
+        <span class='right' />
         </div>
 }
 

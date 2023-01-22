@@ -7,13 +7,13 @@ export type TransformConfig = {
 
 export const editor = new EditorObject({
     create: (config) => new Transform(config.pos),
-    config:{pos:new Vect2(0,0)} satisfies TransformConfig
+    config:() => ({pos:new Vect2(0,0)}) satisfies TransformConfig
 })
 
 export class Transform extends GameObject implements TransformConfig {
     pos: Vect2;
     constructor(pos:Vect2) {
-        super();
+        super(Transform.name);
         this.pos = pos;
     }
 }

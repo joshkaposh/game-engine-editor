@@ -10,7 +10,8 @@ export default class Pencil implements IPencil{
 	private c;
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas!;
-		this.c = canvas.getContext("2d",{alpha:false})!;
+		this.c = canvas.getContext("2d", { alpha: false })!;
+		this.c.imageSmoothingEnabled = false;
     }
     
     get canvasWidth() {

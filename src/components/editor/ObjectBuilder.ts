@@ -13,13 +13,21 @@ export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Pa
 
 export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
 
+// function copyValues(first: { [key: string]: any }, second: { [key: string]: any }) {
+//     const entries = 
+// }
+
 export default class ObjectBuilder {
     #root!: Configs & {[key:string]:any};
     #type!: ClassKeys;
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
 
-    constructor(type:ClassKeys) {
+    constructor(type:ClassKeys,copy?:Configs & {[key:string]:any}) {
+        if (copy) {
+            console.log('There is a copy',copy);
+            
+        }
         this.#setDefaultConfig(type);
     }
 
@@ -34,21 +42,13 @@ export default class ObjectBuilder {
     #setDefaultConfig(type:ClassKeys) {
         this.#type = type;
         this.#root = objects[type].editor.config();
+        console.log('SetDefault: ',this.#root);
+        
         const [paths, setPaths] = createStore<Paths>({})
         this.#paths = paths;
         this.#setPaths = setPaths;
         setRootKeys(this.#root, setPaths)
-        console.log('Builder default object: %s',type);
-        console.table(this.#root)
 
-    }
-
-    switchObjectConfig(type: ClassKeys) {
-        if (type === this.#type) {
-            //* do nothing
-            return;
-        }
-        this.#setDefaultConfig(type)
     }
 
     addToPath(rootKey: string, propertyKey: string) {
@@ -86,13 +86,10 @@ export default class ObjectBuilder {
             temp = temp[path[i]]
         }
         temp[key] = value;
-        console.log('EditPropery::Root',this.#root);
     
     }
 
     build() {
-        console.log('---Building Object---');
-        objects[this.#type]['editor'].create(this.#root as any)
-        
+        return objects[this.#type]['editor'].create(this.#root as any)
     }
 }

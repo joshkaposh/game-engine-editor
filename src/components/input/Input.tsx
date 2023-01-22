@@ -1,6 +1,6 @@
 import { Component, Accessor, onMount } from "solid-js";
 import { createSignal } from "solid-js";
-
+import { canRecurse } from "../editor/ObjectBuilder";
 type Relay<T extends unknown> = (value: Accessor<T>) => void;
 
 type Input<T extends unknown> = {
@@ -13,9 +13,13 @@ type TextProps = Input<string>;
 type BooleanProps = Input<boolean>;
 
 export const Label: Component<{
-    for: string;
+    entry:[string,unknown]
+    handleClick: (type: string) => void;
 }> = (props) => {
-    return <label>{props.for}</label>
+    return <label onclick={(e) => {
+        e.preventDefault();
+        props.handleClick(props.entry[0])
+    }}>{props.entry[0]}</label>
 }
 
 export const Boolean: Component<BooleanProps> = (props) => {

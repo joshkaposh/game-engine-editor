@@ -13,7 +13,7 @@ type Inner = {
 class Depth3 extends GameObject implements Depth3Config {
     inner1: Inner;
     constructor(inner1: Inner) {
-        super();
+        super(Depth3.name);
         this.inner1 = inner1;
         
     }
@@ -23,6 +23,9 @@ export default {
     obj: Depth3,
     editor: new EditorObject({
         create: (config) => new Depth3(config.inner1),
-        config: {inner1:{inner2: {inner3:''}}} satisfies Depth3Config
-    })
+        config: () => {
+            return {
+                inner1: {inner2: {inner3:''}}
+            } satisfies Depth3Config
+        }    })
 }
