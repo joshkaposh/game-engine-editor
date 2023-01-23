@@ -37,72 +37,53 @@ type FilterEntriesProps = FormProps & {
         rootKey?: string
 }
 
-const ObjectForm: Component<FormProps> = (props) => {
+const EditObjectForm: Component<FormProps> = (props) => {
     const [property,setProperty] = createSignal<string>()
-
     return <form >
         <div>
             <h2>{props.type}</h2>
         </div>
-        
-        <FilterEntries
-            depth={0}
+        <Entries
             type={props.type}
             builder={props.builder}
-            config={props.builder.root}
             create={props.create}
+            depth={0}
+            config={props.builder.root}
             repeatProperty={property}
             setRepeatProperty={setProperty}
         />
     </form>
 }
 
-const FilterEntries: Component<FilterEntriesProps> = (props) => {
+const Entries: Component<FilterEntriesProps> = (props) => {
     return <>
         <For each={Object.entries(props.config)}>{(entry) => (
-            <FilterEntry
-                entry={entry}
-                type={props.type}
-                depth={props.depth}
-                builder={props.builder}
-                rootKey={props.rootKey}
-                create={props.create}
-                repeatProperty={props.repeatProperty}
-                setRepeatProperty={props.setRepeatProperty}
-            />
+            <Show when={entry[0] !== 'id' && entry[0] !== 'goName'}>
+                <Label entry={entry} handleClick={(type) => {}} />
+                <Switch>
+                    <MatchPrimitives
+                        entry={entry}
+                        relay={(value) => props.builder.edit(entry[0], value(), props.rootKey)}
+                    />
+                    <MatchObjectRecursive
+                        entry={entry as [string, UnknownObject]}
+                        config={entry[1] as UnknownObject}
+                        type={props.type}
+                        depth={props.depth}
+                        builder={props.builder}
+                        rootKey={props.depth === 0 ? entry[0] : props.rootKey}
+                        create={props.create}
+                        repeatProperty={props.repeatProperty}
+                        setRepeatProperty={props.setRepeatProperty}
+                    />
+                </Switch>
+            </Show>
         )}
         </For>
         <Show when={props.depth === 0}>
             <CreateObjectBtn type={props.type} builder={props.builder} create={props.create} />
         </Show>
     </>
-}
-
-const FilterEntry: Component<FilterEntryProps> = (props) => {
-    return (<>
-        <Show when={props.entry[0] !== 'id' && props.entry[0] !== 'goName'}>
-            <Label entry={props.entry} handleClick={(type) => {
-                props.setRepeatProperty(type)
-            }} />
-            <Switch>
-                <MatchPrimitives entry={props.entry} relay={(value) => {
-                    props.builder.edit(props.entry[0],value(),props.rootKey,)
-                    }}
-                />
-                <MatchObjectRecursive
-                    entry={props.entry}
-                    config={props.entry[1]}
-                    type={props.type}
-                    depth={props.depth}
-                    builder={props.builder}
-                    rootKey={props.depth === 0 ? props.entry[0] : props.rootKey}
-                    create={props.create}
-                    repeatProperty={props.repeatProperty}
-                    setRepeatProperty={props.setRepeatProperty}
-                />
-            </Switch>
-        </Show>
-        </>)
 }
 
 const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
@@ -113,7 +94,7 @@ const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
     })
 
     return <Match when={canRecurse(props.entry[1])}>
-        <FilterEntries
+        <Entries
             config={props.entry[1]}
             depth={props.depth + 1}
             type={props.type}
@@ -127,4 +108,4 @@ const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
 }
 
 
-export default ObjectForm;
+export default EditObjectForm;
