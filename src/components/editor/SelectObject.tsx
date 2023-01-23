@@ -6,7 +6,7 @@ import GameEngine from "../../game-engine/initialize";
 const SelectObject: Component<{
     select: (type: ClassKeys) => void;
     types:string[]
-    engine:GameEngine;
+    // engine:GameEngine;
 }> = (props) => {
 
     return <ul>
@@ -16,9 +16,9 @@ const SelectObject: Component<{
                 e.preventDefault();
                 props.select(type as ClassKeys)
                 }}>{type}</button>
-                <Show when={props.engine.lengthStore[type] > 0}>
+                {/* <Show when={props.engine.lengthStore[type] > 0}>
                     {props.engine.lengthStore[type]}
-                </Show>
+                </Show> */}
             </li>
         }}
         </For>

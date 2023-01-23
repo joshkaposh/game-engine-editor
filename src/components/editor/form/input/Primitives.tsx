@@ -1,6 +1,6 @@
 import type { Component,Accessor, JSXElement } from "solid-js";
 import { Match } from "solid-js";
-import { Color,Text,Number,Boolean } from "../../input/Input";
+import { Color,Text,Number,Boolean } from "./Input";
 
 const Field: Component<{
     input:JSXElement

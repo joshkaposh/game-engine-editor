@@ -1,10 +1,11 @@
-import {  Accessor, Component, createEffect, createSignal, Setter } from "solid-js";
-import type { ClassKeys, ClassTypes } from "../../objects";
-import { Switch, Match, For, onMount, Show } from "solid-js";
-import { Label } from "../input/Input";
-import MatchPrimitives from "./form/Primitives";
-import ObjectBuilder,{canRecurse} from "./ObjectBuilder";
-import CreateObjectBtn from "../input/CreateObjectBtn";
+import type  {  Accessor, Component, Setter } from "solid-js";
+import type { ClassKeys, ClassTypes } from "../../../objects";
+import { Switch, Match, For, onMount, Show, createSignal } from "solid-js";
+import { Label } from "./input/Input";
+import MatchPrimitives from "./input/Primitives";
+import CreateObjectBtn from "./input/CreateObjectBtn";
+import ObjectBuilder, { canRecurse } from "../ObjectBuilder";
+
 
 export type Paths = { [key: string]: string[] }
 export type UnknownObject = { [key: string]: unknown }
@@ -15,51 +16,25 @@ export interface FormProps {
     create: (type: ClassTypes) => void;
 }
 
-type TrackingProps = FormProps & {
-    depth: number;
-    rootKey?: string
-}
-
-type FilterEntriesProps = TrackingProps & {
-    config: UnknownObject;
-    repeatProperty: Accessor<string | undefined>
-    setRepeatProperty:Setter<string | undefined>
-    
-}
-
-type FilterEntryProps = TrackingProps & {
-    repeatProperty: Accessor<string | undefined>
-    setRepeatProperty:Setter<string | undefined>
-    entry: [string, any]
-}
 type RecurseObjectProps = FilterEntriesProps & {
     entry: [string, UnknownObject]
 }
 
-const Repeat: Component<{
-    type: string;
-    property: Accessor<string | undefined>;
-}> = (props) => {
-    const [toggled,setToggled] = createSignal(false)
-    // TODO: provide a menu for repeated object creation E.g current.x = last.x + someValue
-    // TODO: provide an operator (-, +, *, /)
-    // TODO: refactor FilterEntries to take isRepeating prop
-
-    
-    return <>
-        <button type='button' onclick={(e) => {
-            e.preventDefault();
-            setToggled(!toggled())
-        }}>
-        Repeat
-        </button>
-        <Show when={toggled()}>
-            <div>
-                <p>Hi {props.property()}</p>
-                
-            </div>
-        </Show>
-    </>
+type FilterEntryProps = FormProps & {
+    repeatProperty: Accessor<string | undefined>
+    setRepeatProperty:Setter<string | undefined>
+    entry: [string, any]
+} & {
+    depth: number;
+    rootKey?: string
+}
+type FilterEntriesProps = FormProps & {
+    config: UnknownObject;
+    repeatProperty: Accessor<string | undefined>
+    setRepeatProperty:Setter<string | undefined>
+} & {
+        depth: number;
+        rootKey?: string
 }
 
 const ObjectForm: Component<FormProps> = (props) => {
@@ -68,7 +43,6 @@ const ObjectForm: Component<FormProps> = (props) => {
     return <form >
         <div>
             <h2>{props.type}</h2>
-            {/* <Repeat property={property} type={props.type} /> */}
         </div>
         
         <FilterEntries

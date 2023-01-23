@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import type { FormProps } from "../editor/EditObjectForm";
+import type { FormProps } from "../EditObjectForm";
 
 const CreateObjectBtn: Component<FormProps> = (props) => {
     return <button type="submit" onclick={(e) => {

@@ -1,42 +1,13 @@
 import type { Accessor, Component, Setter  } from 'solid-js'
 import type { ClassKeys } from '../../objects';
-import { createSignal, Show, createEffect } from "solid-js";
+import { Show } from "solid-js";
 import SelectObject from "./SelectObject";
-import ConfigureObject from './ConfigureObject';
+import EditObjectForm from './form/EditObjectForm';
 import Canvas from '../canvas/Canvas';
-import GameEngine from '../../game-engine/initialize';
+import create from './signals/create';
 import ObjectBuilder from './ObjectBuilder';
 import objects from '../../objects';
-
-const createSignals = () => {
-    const [selected, setSelected] = createSignal<ClassKeys>()
-    const [builder,setBuilder] = createSignal<ObjectBuilder>()
-    const select = (type: ClassKeys) => {
-        if (type === selected()) {
-            setSelected(undefined);
-            return;
-        }
-        setSelected(type)
-        return;
-    }
-
-    createEffect(() => {
-            if (!selected()) {
-                setBuilder();
-                return
-            }
-            setBuilder(new ObjectBuilder(selected()!));
-            return
-    })
-
-    return {
-        builder,
-        setBuilder,
-        selected,
-        select,
-    }
-
-}
+import GameEngine from '../../game-engine/initialize';
 
 const Play: Component<{
     isRunning: Accessor<boolean>
@@ -52,34 +23,26 @@ const Play: Component<{
 
 const Editor: Component<{
     engine: GameEngine
-}> = (props) => {
-    const { selected, builder, select,setBuilder } = createSignals()
-    const [isRunning,setRunning] = createSignal(false)
+}> = ({engine}) => {
+    const {isRunning,setRunning,selected,select,builder,setBuilder} = create(engine)
 
-    createEffect(() => {
-        isRunning() ?
-            props.engine.start() :
-            props.engine.stop();
-    })
-    
     return <div id='editor'>
         <div class='left'>
             <Play isRunning={isRunning} setRunning={setRunning} />            
             <h2>Selected: {selected()}</h2>
-            <SelectObject types={Object.keys(objects)} select={select} engine={props.engine} />
+            <SelectObject types={Object.keys(objects)} select={select} />
             <Show when={selected() && builder()}>
-                <ConfigureObject
+                <EditObjectForm
+                    type={selected()!}
                     builder={builder()!}
-                    select={select}
-                    selected={selected}
                     create={(type) => {
-                        props.engine.add(type)
+                        engine.add(type)
                         setBuilder(new ObjectBuilder(type.goName as ClassKeys))
                     }}
                 />
             </Show>
         </div>
-        <Canvas engine={props.engine} />
+        <Canvas engine={engine} />
         <span class='right' />
         </div>
 }

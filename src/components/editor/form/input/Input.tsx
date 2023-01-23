@@ -1,8 +1,7 @@
-import { Component, Accessor, onMount } from "solid-js";
+import type { Component, Accessor } from "solid-js";
 import { createSignal } from "solid-js";
-import { canRecurse } from "../editor/ObjectBuilder";
-type Relay<T extends unknown> = (value: Accessor<T>) => void;
 
+type Relay<T extends unknown> = (value: Accessor<T>) => void;
 type Input<T extends unknown> = {
     relay: Relay<T>;
     initialValue?: T;
