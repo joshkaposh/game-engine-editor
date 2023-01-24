@@ -23,7 +23,7 @@ ul,ol {
 
 #editor {
     display:grid;
-    grid-template-columns: 1.75fr 4fr minmax(max-content, 0.1fr); 
+    grid-template-columns: max-content 4fr minmax(max-content, 0.1fr); 
     height:75vh;
 }
 

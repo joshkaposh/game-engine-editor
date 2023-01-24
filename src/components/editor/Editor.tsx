@@ -1,5 +1,5 @@
 import type { Accessor, Component, Setter  } from 'solid-js'
-import type { ClassKeys } from '../../objects';
+import type { ClassKeys, Configs } from '../../objects';
 import { Show } from "solid-js";
 import SelectObject from "./SelectObject";
 import EditObjectForm from './form/EditObjectForm';
@@ -36,8 +36,9 @@ const Editor: Component<{
                     type={selected()!}
                     builder={builder()!}
                     create={(type) => {
+                        const prev = builder();
                         engine.add(type)
-                        setBuilder(new ObjectBuilder(type.goName as ClassKeys))
+                        setBuilder(new ObjectBuilder(type.goName as ClassKeys, prev))
                     }}
                 />
             </Show>
