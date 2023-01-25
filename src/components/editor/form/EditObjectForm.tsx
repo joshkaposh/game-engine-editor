@@ -1,11 +1,13 @@
-import  { children, Component, JSXElement } from "solid-js";
+import type { Component, } from 'solid-js'
 import type { ClassKeys, ClassTypes } from "../../../objects";
-import { Switch, Match, For, onMount, Show, createSignal } from "solid-js";
-import { Label } from "./input/Input";
-import MatchPrimitives from "./input/Primitives";
-import CreateObjectBtn from "./input/CreateObjectBtn";
-import ObjectBuilder, { canEdit, canRecurse } from "../ObjectBuilder";
+import type { LengthStore, ObjectDict } from "../../../game-engine/initialize";
+import { createEffect, on, Show, createSignal } from "solid-js";
+import SelectFromArray from './input/SelectFromArray';
+import ObjectBuilder, { SetBuilder } from "../ObjectBuilder";
+import CreateObjectBtn from './input/CreateObjectBtn';
+import RecurseEntries from './RecurseEntries';
 
+export type Modes = 'Create' | 'Edit';
 export type Paths = { [key: string]: string[] }
 export type UnknownObject = { [key: string]: unknown }
 
@@ -15,129 +17,51 @@ export interface FormProps {
     create: (type: ClassTypes) => void;
 }
 
-type FilterEntriesProps = FormProps & {
-    config: UnknownObject;
-} & {
-    depth: number;
-    rootKey?: string
-}
+const EditObjectForm: Component<FormProps & {
+    lengthStore: LengthStore;
+    objects: ObjectDict;
+    setBuilder: SetBuilder;
+}> = (props) => {
+    const [mode,setMode] = createSignal<Modes>('Create')
+    const [index,setIndex] = createSignal<number>()
+    
+    createEffect(on(index, (i) => {
+        if (i !== undefined) {
+          props.setBuilder(new ObjectBuilder(props.objects[props.type][i] as ClassTypes))
+        }
+    },{defer:true}))
 
-type RecurseObjectProps = FilterEntriesProps & {
-    entry: [string, UnknownObject]
-}
-
-
-const EditObjectForm: Component<FormProps> = (props) => {
-    return <form >
-        <div>
+    return <form class='object-form'>
+        <div class='form-header'>
             <h2>{props.type}</h2>
+            <Show when={props.lengthStore[props.type] > 0}>
+                <SelectFromArray
+                    type={props.type}
+                    length={props.lengthStore[props.type]}
+                    index={index}
+                    setIndex={setIndex}
+                    mode={mode}
+                    setMode={setMode}
+                />            
+            </Show>
         </div>
-        <EntriesOld
+        <RecurseEntries
+            builder={props.builder}
+            config={props.builder.root}
+            depth={0}
+            mode={mode}
+            setMode={setMode}
+        />
+        <CreateObjectBtn
             type={props.type}
             builder={props.builder}
+            setBuilder={props.setBuilder}
             create={props.create}
-            depth={0}
-            config={props.builder.root}
+            mode={mode}
+            setMode={setMode}
+            resetIndex={() => {setIndex()}}
         />
     </form>
 }
-
-// TODO: refactor Switch to into <SwitchTypes primitives={<Primitives />} objects={<Objects />} /> 
-
-const Filter: Component<{
-    entry:[string,unknown]
-    primitives: JSXElement;
-    objects: JSXElement;
-}> = (props) => {
-    const p = children(() => props.primitives)
-    const o = children(() => props.objects)
-    return <>
-        <Label entry={props.entry} handleClick={(type) => {}} />
-        <Switch>
-            {p}
-            {o}
-        </Switch>
-    </>
-}
-
-const EntriesOld: Component<FilterEntriesProps> = (props) => {
-    return <>
-        <For each={Object.entries(props.config)}>{(entry) => (
-            <Show when={canEdit(entry[0])}>
-                <Label entry={entry} handleClick={(type) => {}} />
-                <Switch>
-                    <MatchPrimitives
-                        entry={entry}
-                        relay={(value) => props.builder.edit(entry[0], value(), props.rootKey)}
-                    />
-                    <MatchObjectRecursive
-                        entry={entry as [string, UnknownObject]}
-                        config={entry[1] as UnknownObject}
-                        type={props.type}
-                        depth={props.depth}
-                        builder={props.builder}
-                        rootKey={props.depth === 0 ? entry[0] : props.rootKey}
-                        create={props.create}
-                    />
-                </Switch>
-            </Show>
-        )}
-        </For>
-        <Show when={props.depth === 0}>
-            <CreateObjectBtn type={props.type} builder={props.builder} create={props.create} />
-        </Show>
-    </>
-}
-const EntriesNew: Component<FilterEntriesProps> = (props) => {
-    return <>
-        <For each={Object.entries(props.config)}>{(entry) => (
-            <Show when={entry[0] !== 'id' && entry[0] !== 'goName'}>
-                <Filter
-                    entry={entry}
-                    primitives={
-                        <MatchPrimitives
-                        entry={entry}
-                        relay={(value) => props.builder.edit(entry[0], value(), props.rootKey)}
-                        />
-                    }
-                    objects={<MatchObjectRecursive
-                        entry={entry as [string, UnknownObject]}
-                        config={entry[1] as UnknownObject}
-                        type={props.type}
-                        depth={props.depth}
-                        builder={props.builder}
-                        rootKey={props.depth === 0 ? entry[0] : props.rootKey}
-                        create={props.create}
-                    />}
-
-                />
-            </Show>
-        )}
-        </For>
-        <Show when={props.depth === 0}>
-            <CreateObjectBtn type={props.type} builder={props.builder} create={props.create} />
-        </Show>
-    </>
-}
-
-const MatchObjectRecursive: Component<RecurseObjectProps> = (props) => {
-    onMount(() => {
-        if (props.rootKey && props.entry[1] && props.rootKey !== props.entry[0] && canRecurse(props.entry[1])) {
-            props.builder.addToPath(props.rootKey,props.entry[0])
-        }
-    })
-
-    return <Match when={canRecurse(props.entry[1])}>
-        <EntriesOld
-            config={props.entry[1]}
-            depth={props.depth + 1}
-            type={props.type}
-            builder={props.builder}
-            rootKey={props.rootKey}
-            create={props.create}
-        />
-    </Match>
-}
-
 
 export default EditObjectForm;

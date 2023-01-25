@@ -1,5 +1,5 @@
 import type { Accessor, Component, Setter  } from 'solid-js'
-import type { ClassKeys, Configs } from '../../objects';
+import type { ClassKeys } from '../../objects';
 import { Show } from "solid-js";
 import SelectObject from "./SelectObject";
 import EditObjectForm from './form/EditObjectForm';
@@ -19,33 +19,59 @@ const Play: Component<{
     }}>
         {props.isRunning() ? 'Stop':'Start'}
     </button>
+    }
+
+const KeepPrevious: Component<{
+    isTrue: Accessor<boolean>;
+    toggle: () => void;
+}> = (props) => {
+    return <div class='toggle-keep-previous'>
+        <label>Keep</label>
+        <input type='checkbox'
+            checked={props.isTrue()}
+            onchange={(e) => {
+            e.preventDefault();
+            props.toggle();
+        }}
+        />
+</div>
 }
 
 const Editor: Component<{
     engine: GameEngine
 }> = ({engine}) => {
-    const {isRunning,setRunning,selected,select,builder,setBuilder} = create(engine)
+    const { runningSignal, selected, select, builder, setBuilder,keepPrev,toggleKeepPrev,indexSignal } = create(engine)
 
-    return <div id='editor'>
-        <div class='left'>
-            <Play isRunning={isRunning} setRunning={setRunning} />            
-            <h2>Selected: {selected()}</h2>
-            <SelectObject types={Object.keys(objects)} select={select} />
-            <Show when={selected() && builder()}>
-                <EditObjectForm
-                    type={selected()!}
-                    builder={builder()!}
-                    create={(type) => {
-                        const prev = builder();
-                        engine.add(type)
-                        setBuilder(new ObjectBuilder(type.goName as ClassKeys, prev))
-                    }}
-                />
-            </Show>
+
+return <div id='editor'>
+    <div class='left'>
+        <div class='left-header'>
+            <Play isRunning={runningSignal[0]} setRunning={runningSignal[1]} />            
+            <KeepPrevious isTrue={keepPrev} toggle={toggleKeepPrev} />
         </div>
-        <Canvas engine={engine} />
-        <span class='right' />
-        </div>
+        <SelectObject types={Object.keys(objects)} select={select} />
+        <Show when={selected() && builder()}>
+            <EditObjectForm
+                lengthStore={engine.dict.lengthStore}
+                objects={engine.dict.objects}
+                type={selected()!}
+                builder={builder()!}
+                setBuilder={setBuilder}
+                create={(type) => {
+                    engine.dict.add(type)
+                    if (!keepPrev()) {
+                        setBuilder(new ObjectBuilder(type.goName as ClassKeys))
+                    return
+                    }
+                    const prev = builder();
+                    setBuilder(new ObjectBuilder(type.goName as ClassKeys, prev))
+                }}
+            />
+        </Show>
+    </div>
+    <Canvas engine={engine} />
+    <span class='right' />
+</div>
 }
 
 export default Editor;

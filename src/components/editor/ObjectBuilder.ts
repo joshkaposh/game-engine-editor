@@ -1,6 +1,11 @@
-import { createStore, SetStoreFunction,produce } from "solid-js/store";
+import type { Setter } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
 import type { Paths } from "./form/EditObjectForm";
-import objects, { ClassKeys,Configs } from "../../objects";
+import type { ClassKeys,ClassTypes,Configs } from "../../objects";
+import { createStore, produce } from "solid-js/store";
+import objects  from "../../objects";
+
+export type SetBuilder = Setter<ObjectBuilder | undefined>;
 
 export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
     const entries = Object.entries(root)
@@ -20,8 +25,9 @@ export default class ObjectBuilder {
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
 
-    constructor(type:ClassKeys,previous?:ObjectBuilder) {
+    constructor(type:ClassKeys | ClassTypes,previous?:ObjectBuilder) {
         this.#setDefaultConfig(type);
+
         if (previous) {
             this.#copy(previous)
         }
@@ -40,8 +46,6 @@ export default class ObjectBuilder {
     }
 
     edit(key: string, value: string | number | boolean,rootKey?:string) {
-        console.log('-Edit-',key,value,rootKey ?? 'None');
-        
         if (!rootKey) {
             this.#editProperty(key, value)
             return;
@@ -50,25 +54,19 @@ export default class ObjectBuilder {
     }
 
     addToPath(rootKey: string, propertyKey: string) {
-        this.#setPaths(produce((paths => {
-            paths[rootKey].push(propertyKey)
-        })))
+        this.#setPaths(produce(
+            paths => paths[rootKey].push(propertyKey)
+        ))
     }
 
     #copy(previous: ObjectBuilder) {
         const rEntries = Object.entries(previous.root);
-
         for (let i = 0; i < rEntries.length; i++) {
             const key = rEntries[i][0]
             const value = rEntries[i][1]
-            if (!canRecurse(value)) {
-                if (canEdit(key)) {
+            if (canEdit(key) && !canRecurse(value)) {
                 this.#editPrevious(previous.paths,key,value)
-                }
-                } else {
-                //! need to find path to primitive value
-                this.#_copy(previous, value,key)
-            }
+            } else this.#_copy(previous, value,key)
         }
     }
 
@@ -78,18 +76,23 @@ export default class ObjectBuilder {
             if (canRecurse(temp[i][1]) && canEdit(temp[i][0])) {
                 this.#_copy(previous,temp[i][1],rootKey)
             } else {
-                console.log('Found Primitive! [%s] = %s',temp[i][0],temp[i][1]);
-                console.log('Rootkey:',rootKey);
                 this.#editPrevious(previous.paths,temp[i][0], temp[i][1], rootKey)
             }
         }
         
     }
 
-    #setDefaultConfig(type:ClassKeys) {
-        this.#type = type;
-        this.#root = objects[type].editor.config();
+    #setDefaultConfig(type:ClassKeys | ClassTypes) {
+        if (typeof type === 'string') {
+            this.#type = type;
+            this.#root = objects[type].editor.config();
+            this.#resetPaths()
+            return
+        }
+        this.#type = type.goName as ClassKeys;
+        this.#root = type as Configs;
         this.#resetPaths()
+        
     }
 
     #resetPaths() {
@@ -112,12 +115,7 @@ export default class ObjectBuilder {
     }
 
     #editPropertyPath(rootKey: string, key: string, value: string | number | boolean,path = this.#paths[rootKey]) {
-        console.log('#editPropertPath',rootKey,key,value);
-        console.log('#editPropertyPath path: ',path);
-        console.log(path.length);
-
         if (path.length === 0) {
-            console.log('Path length is ZEROOOOOOOOOO');
             this.#root[rootKey][key] = value
             return;   
         }

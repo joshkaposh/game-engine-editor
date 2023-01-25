@@ -1,15 +1,8 @@
-import type { Component,Accessor, JSXElement } from "solid-js";
+import type { Component,Accessor } from "solid-js";
 import { Match } from "solid-js";
-import { Color,Text,Number,Boolean } from "./Input";
+import { Field,Color,Text,Number,Boolean } from "./Input";
 
-const Field: Component<{
-    input:JSXElement
-}> = (props) => {
-    return <>
-        {props.input}
-        <br />
-    </>
-} 
+
 const MatchPrimitives: Component<{
     entry: [string, any];
     relay: (value:Accessor<string | number | boolean>) => void;
