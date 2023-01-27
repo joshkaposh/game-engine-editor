@@ -4,10 +4,10 @@ import ObjectBuilder from "../ObjectBuilder";
 import GameEngine from "../../../game-engine/initialize";
 
 const createEffects = (engine:GameEngine,signals:ReturnType<typeof createSignals>) => {
-    const { runningSignal, selected, setBuilder } = signals;
+    const { running, selected, setBuilder } = signals;
     
     createEffect(() => {
-        runningSignal[0]() ?
+        running[0]() ?
             engine.start() :
             engine.stop();
     })
@@ -22,29 +22,35 @@ const createEffects = (engine:GameEngine,signals:ReturnType<typeof createSignals
 
 const createSignals = () => {
     const [builder, setBuilder] = createSignal<ObjectBuilder>()
-    const selectedSignal = createSignal<ClassKeys>()
-    const indexSignal = createSignal<number>()
-    const keepPrevSignal = createSignal(false);
-    const runningSignal = createSignal(false)
-    const toggleKeepPrev = () => keepPrevSignal[1](!keepPrevSignal[0]()) 
+    const mode = createSignal<'Create'  | 'Repeat' | 'Edit'>('Create',{equals:false})
+    const index = createSignal<number>()
+    const count = createSignal(0);
+    const repeat = createSignal(false)
+    const selected = createSignal<ClassKeys>()
+    const keepPrev = createSignal(false);
+    const running = createSignal(false)
+    const toggleKeepPrev = () => keepPrev[1](!keepPrev[0]()) 
     const select = (type: ClassKeys) => {
-        if (type === selectedSignal[0]()) {
-            selectedSignal[1](undefined);
+        if (type === selected[0]()) {
+            selected[1](undefined);
             return;
         }
-        selectedSignal[1](type)
+        selected[1](type)
         return;
     }
 
     return {
-        keepPrev: keepPrevSignal[0],
-        selected:selectedSignal[0],
+        keepPrev: keepPrev[0],
+        selected:selected[0],
         toggleKeepPrev,
         select,
         builder,
         setBuilder,
-        runningSignal,
-        indexSignal,
+        running,
+        index,
+        count,
+        repeat,
+        mode
     }
 
 }

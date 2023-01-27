@@ -7,7 +7,7 @@ import objects  from "../../objects";
 
 export type SetBuilder = Setter<ObjectBuilder | undefined>;
 
-export const setRootKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
+const setPathKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
     const entries = Object.entries(root)
     for (const entry of entries) {
         if (canRecurse(entry[1])) {
@@ -25,11 +25,14 @@ export default class ObjectBuilder {
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
 
-    constructor(type:ClassKeys | ClassTypes,previous?:ObjectBuilder) {
+    constructor(type: ClassKeys | ClassTypes,options?: {
+        previous: ObjectBuilder,
+        multiple?: boolean
+    }) {
         this.#setDefaultConfig(type);
 
-        if (previous) {
-            this.#copy(previous)
+        if (options) {
+            this.#copy(options.previous)
         }
     }
 
@@ -37,15 +40,19 @@ export default class ObjectBuilder {
         return this.#paths;
     }
 
-    get root() {
-    return this.#root;
+    get type() {
+        return this.#type
     }
 
-    build() {
+    get root() {
+        return this.#root;
+    }
+
+    build(count?:number) {
         return objects[this.#type]['editor'].create(this.#root as any)
     }
 
-    edit(key: string, value: string | number | boolean,rootKey?:string) {
+    edit(key: string, value: string | number | boolean,rootKey?:string,repeat?:boolean) {
         if (!rootKey) {
             this.#editProperty(key, value)
             return;
@@ -53,10 +60,18 @@ export default class ObjectBuilder {
         this.#editPropertyPath(rootKey,key,value)
     }
 
+    copy() {
+        return new ObjectBuilder(this.#type, { previous: this })
+    }
+
     addToPath(rootKey: string, propertyKey: string) {
         this.#setPaths(produce(
             paths => paths[rootKey].push(propertyKey)
         ))
+    }
+
+    static clone(builder:ObjectBuilder) {
+        return new ObjectBuilder(builder.type,{previous: builder})
     }
 
     #copy(previous: ObjectBuilder) {
@@ -79,10 +94,9 @@ export default class ObjectBuilder {
                 this.#editPrevious(previous.paths,temp[i][0], temp[i][1], rootKey)
             }
         }
-        
     }
 
-    #setDefaultConfig(type:ClassKeys | ClassTypes) {
+    #setDefaultConfig(type: ClassKeys | ClassTypes) {
         if (typeof type === 'string') {
             this.#type = type;
             this.#root = objects[type].editor.config();
@@ -99,7 +113,7 @@ export default class ObjectBuilder {
         const [paths,setPaths] = createStore<Paths>({})
         this.#paths = paths;
         this.#setPaths = setPaths
-        setRootKeys(this.#root, setPaths)
+        setPathKeys(this.#root, setPaths)
     }
 
     #editPrevious(paths:Paths,key: string, value: string | number | boolean,rootKey?:string) {

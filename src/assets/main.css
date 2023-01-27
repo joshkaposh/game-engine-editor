@@ -31,6 +31,14 @@ ul,ol {
     position:relative;
 }
 
+.object-menu {
+    /* position:absolute; */
+    width:100%;
+    height:100%;
+    background-color: white;
+}
+
+
 .edit-object {
     margin: 0.15rem 0 0.15rem 0.15rem;
 }
@@ -41,13 +49,25 @@ ul,ol {
     width:60%;
 }
 
-.select-object-menu {
-    position:absolute;
+.counter {
+    display:grid;
+    grid-template-columns: min-content 1fr min-content;
+    text-align: center;
+}
+
+.counter-input {
     width:100%;
-    height:100%;
-    background-color: white;
+    border:1px solid black;
 }
 
 
+.counter-btns {
+    display:grid;
+    grid-template-columns: 1fr;
+    width:100%;
+}
 
-
+.counter-btn-inc,.counter-btn-dec {
+    width:50%;
+    max-height: max-content;
+}

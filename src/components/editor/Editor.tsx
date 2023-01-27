@@ -1,5 +1,5 @@
 import type { Accessor, Component, Setter  } from 'solid-js'
-import type { ClassKeys } from '../../objects';
+import type { ClassKeys, ClassTypes } from '../../objects';
 import { Show } from "solid-js";
 import SelectObject from "./SelectObject";
 import EditObjectForm from './form/EditObjectForm';
@@ -40,13 +40,21 @@ const KeepPrevious: Component<{
 const Editor: Component<{
     engine: GameEngine
 }> = ({engine}) => {
-    const { runningSignal, selected, select, builder, setBuilder,keepPrev,toggleKeepPrev,indexSignal } = create(engine)
+    const { running,mode,index,count,repeat, selected, select, builder, setBuilder,keepPrev,toggleKeepPrev } = create(engine)
 
+    const resetBuilder = (type:ClassTypes) => {
+        if (!keepPrev()) {
+            setBuilder(new ObjectBuilder(type.goName as ClassKeys))
+        return
+        }
+        const previous = builder()!;
+        setBuilder(new ObjectBuilder(type.goName as ClassKeys, { previous }))
+    }
 
 return <div id='editor'>
     <div class='left'>
         <div class='left-header'>
-            <Play isRunning={runningSignal[0]} setRunning={runningSignal[1]} />            
+            <Play isRunning={running[0]} setRunning={running[1]} />            
             <KeepPrevious isTrue={keepPrev} toggle={toggleKeepPrev} />
         </div>
         <SelectObject types={Object.keys(objects)} select={select} />
@@ -54,17 +62,19 @@ return <div id='editor'>
             <EditObjectForm
                 lengthStore={engine.dict.lengthStore}
                 objects={engine.dict.objects}
+                mode={mode[0]}
+                setMode={mode[1]}
+                indexSignal={index}
+                countSignal={count}
+                repeatSignal={repeat}
                 type={selected()!}
                 builder={builder()!}
                 setBuilder={setBuilder}
-                create={(type) => {
-                    engine.dict.add(type)
-                    if (!keepPrev()) {
-                        setBuilder(new ObjectBuilder(type.goName as ClassKeys))
-                    return
+                create={(type, count) => {
+                    if (count) {
                     }
-                    const prev = builder();
-                    setBuilder(new ObjectBuilder(type.goName as ClassKeys, prev))
+                    engine.dict.add(type)
+                    resetBuilder(type)
                 }}
             />
         </Show>

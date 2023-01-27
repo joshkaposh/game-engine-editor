@@ -1,5 +1,5 @@
-import type {Component, Accessor, Setter} from 'solid-js'
-import type { Modes, UnknownObject } from './EditObjectForm'
+import type { Accessor, Component } from 'solid-js'
+import type { UnknownObject } from './EditObjectForm'
 import { Show, For, Switch, Match, onMount } from 'solid-js'
 import { Label } from './input/Input'
 import MatchPrimitives from './input/Primitives'
@@ -7,11 +7,10 @@ import ObjectBuilder, { canEdit, canRecurse } from '../ObjectBuilder'
 
 
 type FilterEntriesProps = {
-    mode: Accessor<Modes>
-    setMode: Setter<Modes>
     config: UnknownObject;
     builder:ObjectBuilder
     depth: number;
+    repeat: Accessor<boolean>;
     rootKey?: string;
 }
 
@@ -23,20 +22,21 @@ const RecurseEntries: Component<FilterEntriesProps> = (props) => {
     return <>
         <For each={Object.entries(props.config)}>{(entry) => (
             <Show when={canEdit(entry[0])}>
-                <Label for={entry[0]} handleClick={(type) => {}} />
+                <Label for={entry[0]} />
                 <Switch>
                     <MatchPrimitives
+                        repeat={props.repeat}
                         entry={entry}
-                        relay={(value) => props.builder.edit(entry[0], value(), props.rootKey)}
+                        relay={(value) => props.builder.edit(entry[0], value, props.rootKey)}
+                        relayRepeat={(value) =>{}}
                     />
                     <MatchObject
                         entry={entry as [string, UnknownObject]}
                         config={entry[1] as UnknownObject}
-                        depth={props.depth}
-                        rootKey={props.depth === 0 ? entry[0] : props.rootKey}
                         builder={props.builder}
-                        mode={props.mode}
-                        setMode={props.setMode}
+                        rootKey={props.depth === 0 ? entry[0] : props.rootKey}
+                        depth={props.depth}
+                        repeat={props.repeat}
                     />
                 </Switch>
             </Show>
@@ -53,12 +53,11 @@ const MatchObject: Component<MatchObjectProps> = (props) => {
     
     return <Match when={canRecurse(props.entry[1])}>
         <RecurseEntries
+            repeat={props.repeat}
             rootKey={props.rootKey}
+            builder={props.builder}
             config={props.entry[1]}
             depth={props.depth + 1}
-            builder={props.builder}
-            mode={props.mode}
-            setMode={props.setMode}
         />
     </Match>
 }

@@ -1,3 +1,4 @@
+import Depth1 from "./Depth1";
 import Transform from "./Transform";
 import RectMesh from "./RectMesh";
 import GameObject from "./object/GameObject";
@@ -11,6 +12,7 @@ export type Configs = ReturnType<typeof objects[ClassKeys]['editor']['config']>
 
 
 const objects = {
+    Depth1,
     Transform,
     RectMesh,
 }
