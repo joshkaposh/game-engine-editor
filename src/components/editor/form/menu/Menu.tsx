@@ -1,57 +1,57 @@
 import type { Component, ParentComponent } from "solid-js";
-import { Show, children } from "solid-js";
-import { Button } from "../form/input/Input";
-import createToggleSignal from "../signals/createToggleSignal";
+import { Show, children,createSignal } from "solid-js";
+
+interface MenuProps {
+    select: () => void;
+}
 
 const ToggleMenu: Component<{
     text:string;
     toggle: () => void
 }> = (props) => {
-    return <Button type='button' handleClick={(e) => {
+    return <button type='button' onclick={(e) => {
         e.preventDefault();
         props.toggle();
     }}> 
     {props.text}
-</Button>
+</button>
     }
 
-export const CollapseableMenu: ParentComponent<{
+export const CollapseableMenu: ParentComponent<MenuProps & {
     open: string;
     close: string;
-    select: () => void;
 }> = (props) => {
-    const [open,_,toggle] = createToggleSignal()
+    const [open,setOpen] = createSignal(false)
     const c = children(() => props.children)
     return <div class='menu-container'>
-        <Button handleClick={(e) => {
+        <button onclick={(e) => {
             e.preventDefault();
-            toggle();
+            setOpen(!open());
         }}>
             {open() ? props.close : props.open}
-        </Button>
+        </button>
         <Show when={open()}>
             <div class='object-menu'>
                 <div class='object-menu-body'>
                     {c}
                 </div>
                 <div class='object-menu-submit'>
-                    <Button handleClick={(e) => {
+                    <button onclick={(e) => {
                         e.preventDefault();
-                        toggle();
+                        setOpen(!open());
                         props.select();
                     }}>
                         Select
-                    </Button>
+                    </button>
                 </div>
             </div>
         </Show>
     </div>
 }
 
-const Menu: ParentComponent<{
+const Menu: ParentComponent<MenuProps & {
     clicked: boolean;
     toggle: () => void;
-    select: () => void;
     open?: string;
     exit?: string;
 }> = (props) => {
@@ -66,13 +66,13 @@ const Menu: ParentComponent<{
                 {c}
             </div>
             <div class='object-menu-submit'>
-                <Button handleClick={(e) => {
+                <button onclick={(e) => {
                     e.preventDefault();
                     props.toggle();
                     props.select();
                 }}>
                     Select
-                </Button>
+                </button>
             </div>
         </div>
     </Show>

@@ -1,9 +1,10 @@
-import type { Setter } from "solid-js";
+import type {  Setter } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import type { Paths } from "./form/EditObjectForm";
-import type { ClassKeys,ClassTypes,Configs } from "../../objects";
+import type { ClassKeys,ClassTypes } from "../../objects";
+import type { Config } from "../../game-engine/game-object";
 import { createStore, produce } from "solid-js/store";
-import objects  from "../../objects";
+import objects from "../../objects";
 
 export type SetBuilder = Setter<ObjectBuilder | undefined>;
 
@@ -17,22 +18,24 @@ const setPathKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) =
 }
 
 export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
-export const canEdit = (key:string) => key !== 'id' && key !== 'goName'
+export const canEdit = (key:string) => key !== 'id' && key !== 'goName' && key !== 'coName'
+type Root = Config & { [key: string]: any }
 
 export default class ObjectBuilder {
-    #root!: Configs & {[key:string]:any};
     #type!: ClassKeys;
+    #root!: Root;
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
 
-    constructor(type: ClassKeys | ClassTypes,options?: {
-        previous: ObjectBuilder,
-        multiple?: boolean
+    private constructor(type: ClassKeys | ClassTypes, options?: {
+        previous?: ObjectBuilder,
     }) {
         this.#setDefaultConfig(type);
 
         if (options) {
-            this.#copy(options.previous)
+            if (options.previous) {
+                this.#copy(options.previous)
+            }
         }
     }
 
@@ -48,11 +51,42 @@ export default class ObjectBuilder {
         return this.#root;
     }
 
-    build(count?:number) {
-        return objects[this.#type]['editor'].create(this.#root as any)
+    build() {
+        return objects[this.#type][1][1](this.#root as any)
     }
 
-    edit(key: string, value: string | number | boolean,rootKey?:string,repeat?:boolean) {
+    static new(type: ClassKeys) {
+        return new ObjectBuilder(type)
+    }
+    
+    static edit(type: ClassTypes) {
+        return new ObjectBuilder(type)
+    }
+    
+    static keep(builder: ObjectBuilder) {
+        return new ObjectBuilder(builder.type, { previous: builder })
+    }
+
+    static repeat(builder: ObjectBuilder,add:(type:ClassTypes)=>void,{ count, gap }: { count: number, gap: { x: number; y:number}}) {
+        console.log('Count = ',count);
+        console.log('Gap.x = %s, Gap.y = %s',gap.x,gap.y);
+        let temp = builder;
+        for (let i = 1; i <= count; i++) {
+            console.log('Before', temp.root);
+            add(temp.build())
+            temp = ObjectBuilder.keep(builder)
+            temp.offset(gap.x * i, gap.y * i)
+            console.log('After', temp.root);
+        }
+        console.log(builder.root);
+    }
+
+    offset(x:number,y:number) {
+        this.#root.transform.pos.addX(x) 
+        this.#root.transform.pos.addY(y)
+    }
+
+    edit(key: string, value: string | number | boolean,rootKey?:string) {
         if (!rootKey) {
             this.#editProperty(key, value)
             return;
@@ -60,18 +94,10 @@ export default class ObjectBuilder {
         this.#editPropertyPath(rootKey,key,value)
     }
 
-    copy() {
-        return new ObjectBuilder(this.#type, { previous: this })
-    }
-
-    addToPath(rootKey: string, propertyKey: string) {
+    addToPath(rootKey: string, entry: [string,unknown]) {
         this.#setPaths(produce(
-            paths => paths[rootKey].push(propertyKey)
+            paths => paths[rootKey].push(entry[0])
         ))
-    }
-
-    static clone(builder:ObjectBuilder) {
-        return new ObjectBuilder(builder.type,{previous: builder})
     }
 
     #copy(previous: ObjectBuilder) {
@@ -99,12 +125,12 @@ export default class ObjectBuilder {
     #setDefaultConfig(type: ClassKeys | ClassTypes) {
         if (typeof type === 'string') {
             this.#type = type;
-            this.#root = objects[type].editor.config();
+            this.#root = objects[type][1][0]()
             this.#resetPaths()
             return
         }
         this.#type = type.goName as ClassKeys;
-        this.#root = type as Configs;
+        this.#root = type;
         this.#resetPaths()
         
     }
@@ -114,6 +140,8 @@ export default class ObjectBuilder {
         this.#paths = paths;
         this.#setPaths = setPaths
         setPathKeys(this.#root, setPaths)
+        console.log('Reset::',this.#paths);
+        
     }
 
     #editPrevious(paths:Paths,key: string, value: string | number | boolean,rootKey?:string) {
@@ -129,13 +157,18 @@ export default class ObjectBuilder {
     }
 
     #editPropertyPath(rootKey: string, key: string, value: string | number | boolean,path = this.#paths[rootKey]) {
+        
         if (path.length === 0) {
             this.#root[rootKey][key] = value
             return;   
         }
         let temp = this.#root[rootKey]
+        console.log('Temp:',temp);
+        
         for (let i = 0; i < path.length; i++) {
+            console.log(path[i]);
             temp = temp[path[i]]
+            console.log('Temp:',temp);
         }
         temp[key] = value;
     }

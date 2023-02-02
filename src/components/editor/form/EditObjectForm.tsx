@@ -1,115 +1,86 @@
-import type {  Accessor, Component, Setter, Signal, } from 'solid-js'
-import type { ClassKeys, ClassTypes } from "../../../objects";
-import type { LengthStore, ObjectDict } from "../../../game-engine/initialize";
-import { createEffect, on, Show, createSignal } from "solid-js";
-import { createStore } from 'solid-js/store';
-import SelectFromArray from '../menu/SelectFromArray';
-import ObjectBuilder, { SetBuilder } from "../ObjectBuilder";
-import CreateObjectBtn from './input/CreateObjectBtn';
+import type { Component, Signal } from 'solid-js'
+import type { ClassKeys } from "../../../objects";
+import { Show } from 'solid-js';
 import RecurseEntries from './RecurseEntries';
-import Repeat from '../menu/Repeat';
+import CreateObjectBtn from './input/CreateObjectBtn';
+import { ToggleCheckbox } from './input/Input';
+import { builderSignals, builderEffects } from '../../signals/createBuilder';
+import GameEngine from '../../../game-engine';
+import ObjectBuilder from "../ObjectBuilder";
+import RepeatMode from './modes/RepeatMode';
+import EditMode from './modes/EditMode';
 
-export type Paths = { [key: string]: string[] }
+export type Paths = { [key: string]: string[]  }
 export type UnknownObject = { [key: string]: unknown }
 
 export interface FormProps {
-    type: ClassKeys;
-    builder: ObjectBuilder
-    create: (type: ClassTypes, count?:number) => void;
+    builder: Signal<ObjectBuilder | undefined>
+    selected:Signal<ClassKeys | undefined>
 }
+
 const EditObjectForm: Component<FormProps & {
-    lengthStore: LengthStore;
-    objects: ObjectDict;
-    setBuilder: SetBuilder;
-    mode: Accessor<'Create' | 'Repeat' | 'Edit'>;
-    setMode: Setter<'Create' | 'Repeat' | 'Edit'>;
-    indexSignal:Signal<number | undefined>
-    countSignal: Signal<number>;
-    repeatSignal: Signal<boolean>;
+    length: number;
+    dict:GameEngine['dict']
+
 }> = (props) => {
-
-    const edit = () => {
-        props.indexSignal[1]();
-        props.setBuilder(new ObjectBuilder(props.type))
-        props.setMode('Create');
+    const { dict,builder,selected } = props
+    const builder_signals = builderSignals()
+    const {mode,keep,index,repeat} = builderEffects(props.dict,{...builder_signals,builder,selected})
+    const resetBuilder = (b:ObjectBuilder) => {
+        !keep[0]() ?
+            builder[1](ObjectBuilder.new(b.type)) :
+            builder[1](ObjectBuilder.keep(b))
     }
-    const repeat = () => {
-        props.create(props.builder.build(),props.countSignal[0]())
-        props.setMode('Create')
-    }
-    const create = () => {
-        props.create(props.builder.build())
-    }
-
-    const handleCreate = () => {
-        switch (props.mode()) {
-            case 'Edit':
-                edit();
-                return;
-            case 'Repeat':
-                repeat();
-                return;
-            case 'Create':
-                create()
-                return;
-            default:
-                throw new Error('No mode was found :' + props.mode())
-        }
-    }
-    createEffect(on(props.indexSignal[0], (i) => {
-        console.log('index was changed to ',i);
-        
-        if (i !== undefined) {
-          props.setBuilder(new ObjectBuilder(props.objects[props.type][i] as ClassTypes))
-        }
-    }, { defer: true }))
-    
-
-    createEffect(on(props.repeatSignal[0], (repeat) => {
-
-    }, { defer: true }))
-    
-    // TODO: create a better way of handling state
-    //* Type Signature = undefined | ObjectBuilder
-    //* 0 = setBuilder()
-    //* 1 = setBuilder(new Builder(type)
-    //* 2 = setBuilder(new Builder(type,{ keep }))
-    //* 3 = setBuilder(new Builder(type,{ keep, repeat }))
-    //? Goal: create effect for handling each scenario
-    //? select effect handles first two
-
-
     return <form class='object-form'>
-        <div class='form-header'>
-            <h2>{props.type}</h2>
+        <hr />
+        <div class='form-modes'>
+            <label>Operations:</label>
+            <ul class='form-operations'>
+                <Show when={props.length > 0}>
+                    <EditMode
+                        length={props.length}
+                        index={index[0]}
+                        setIndex={index[1]}
+                        setMode={mode[1]}
+                    />            
+                </Show>
+            </ul>
         </div>
-        <div class='form-menus'>
-            <Repeat
-                countSignal={props.countSignal}
-                toggled={props.repeatSignal[0]}
-                toggle={() => {
-                    props.repeatSignal[1](!props.repeatSignal[0]())
-                }}
-            />
-            <Show when={props.lengthStore[props.type] > 0}>
-                <SelectFromArray
-                    type={props.type}
-                    length={props.lengthStore[props.type]}
-                    index={props.indexSignal[0]}
-                    setIndex={props.indexSignal[1]}
-                    setMode={props.setMode}
-                />            
-            </Show>
-        </div>
+        <hr class='form-section' />
         <RecurseEntries
-            builder={props.builder}
-            config={props.builder.root}
+            builder={builder[0]()!}
+            config={builder[0]()!.root}
             depth={0}
-            repeat={props.repeatSignal[0]}
         />
+        <hr class='form-section' />
+        <div class='form-tools'>
+            <ToggleCheckbox signal={keep} text='Keep' />
+            <RepeatMode
+                count={repeat.count}
+                setGap={repeat.gap[1]}
+                toggled={repeat.enabled[0]}
+                toggle={() => repeat.enabled[1](!repeat.enabled[0]())}
+            />
+        </div>
         <CreateObjectBtn
-            handleCreate={handleCreate}
-            mode={props.mode}
+            setIndex={index[1]}
+            setRepeat={repeat.enabled[1]}
+            mode={mode[0]}
+            create={() => {
+                const b = builder[0]()!
+                dict.add(b.build())
+                resetBuilder(b)
+            }}
+            createMany={() => {
+                console.log('Create Many!');
+                if (repeat.count[0]() === 0) return
+
+                ObjectBuilder.repeat(builder[0]()!,(go) => dict.add(go), {
+                    count: repeat.count[0](),
+                    gap: repeat.gap[0]
+                })
+                resetBuilder(builder[0]()!)
+            }}
         />
     </form>
 }

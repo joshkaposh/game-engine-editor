@@ -1,27 +1,27 @@
 import type { Store } from "solid-js/store";
-import type { ClassTypes } from "../objects";
-import { toArrays } from "../objects"
-import Render2d from "../render/Render2d";
+import { toDict } from "../objects"
+import GameObject from "./game-object";
+import Render2d from "./render/Render2d";
 import Time from "./time/Time";
 
 export type LengthStore = Store<{[key:string]:number}>
-export type ObjectDict = ReturnType<typeof toArrays>['dict'];
+export type ObjectDict = ReturnType<typeof toDict>[0];
 const bind = (fn:(...args:any) => void,to:object) => fn.bind(to)
 
-class Objects {
+class Dict {
     objects: ObjectDict
     lengthStore: LengthStore
     setLength: (key: string, length: number) => void;
     constructor() {
-        const mainDict = toArrays()
-        this.objects = mainDict.dict
-        this.lengthStore = mainDict.lengths[0]
+        const [dict,lengths] = toDict()
+        this.objects = dict
+        this.lengthStore = lengths[0]
         this.setLength = (key: string, length: number) => {
-            mainDict.lengths[1](key,length)
+            lengths[1](key,length)
         }
     }
     
-    add(gameObject:ClassTypes) {
+    add(gameObject: GameObject) {
         if (gameObject.goName in this.objects) {
             const arr = this.objects[gameObject.goName] 
             arr.push(gameObject)
@@ -38,10 +38,10 @@ class GameEngine {
     #canvas!: HTMLCanvasElement;
     time!: Time;
     animationId!: number;
-    dict: Objects
+    dict: Dict
     constructor() {
         this.renderer = new Render2d();
-        this.dict = new Objects();
+        this.dict = new Dict();
     }
 
     init(canvas: HTMLCanvasElement) {

@@ -9,13 +9,17 @@ type InputProps<T extends unknown> = {
     class?: string;
 }
 
-type NumberProps = InputProps<number>;
 type TextProps = InputProps<string>;
 type BooleanProps = InputProps<boolean>;
 type RangeProps = InputProps<number> & {
     min: number;
     max: number;
 }
+type NumberProps = InputProps<number> & {
+    min?: number;
+    max?: number;
+};
+
 
 function inputSignal<T extends unknown>(initialValue:T,potentialSignal?:Signal<T>) {
     if (!potentialSignal) 
@@ -51,7 +55,6 @@ export const Field: ParentComponent = (props) => {
     </>
 }
 
-
 export const Boolean: Component<BooleanProps> = (props) => {
     const signal = inputSignal(props.initialValue ?? false,props.signal)
 
@@ -65,17 +68,18 @@ export const Boolean: Component<BooleanProps> = (props) => {
     }} />
 }
 
-export const Number: Component<NumberProps & {
-    min?: number;
-    max?: number;
-}> = (props) => {
+export const Number: Component<NumberProps> = (props) => {
     
     const signal = inputSignal(props.initialValue ?? 0,props.signal)
 
     return <input type='number' min={props.min} max={props.max} class={props.class} value={signal[0]()} oninput={(e) => {
         e.preventDefault();
-        signal[1](parseInt(e.currentTarget.value))
+        e.currentTarget.value.charAt(0) !== '' ?
+            signal[1](parseInt(e.currentTarget.value)) :
+            signal[1](0)
+        
         props.relay && props.relay(signal[0]())
+        
     }} />
 }
 
@@ -90,8 +94,10 @@ export const Text: Component<TextProps> = (props) => {
 }
 
 export const Color: Component<TextProps> = (props) => {
-    const signal = inputSignal(props.initialValue ?? '#000',props.signal)
-    return <input type="color" value={props.initialValue} oninput={(e) => {
+    console.log('Color Input',props.initialValue);
+    
+    const signal = inputSignal(props.initialValue ?? '#fff', props.signal)
+    return <input type="color" value={signal[0]()} oninput={(e) => {
         e.preventDefault();
         signal[1](e.currentTarget.value)
         props.relay && props.relay(signal[0]())
@@ -129,4 +135,33 @@ export const Range: Component<RangeProps> = (props) => {
         max={Math.floor(props.max)}
         />
     </>
+}
+
+
+export const ToggleCheckbox: Component<{
+    signal: Signal<boolean>
+    text: string;
+}> = ({text,signal}) => {
+    
+    return <div>
+        <label>{text}</label>
+        <input type="checkbox" checked={signal[0]()} onchange={(e) => {
+            e.preventDefault();
+            signal[1](!signal[0]())
+        }} />
+    </div>
+}
+
+export const Toggle: Component<{
+    signal: Signal<boolean>
+    on?: string;
+    off?: string
+}> = ({signal,on = 'on',off = 'off'}) => {
+    
+    return <button type='button' onclick={(e) => {
+            e.preventDefault();
+            signal[1](!signal[0]());
+        }}>
+            {signal[0]() ? off : on}
+        </button>
 }

@@ -1,4 +1,4 @@
-import { RectMesh } from "../objects/RectMesh";
+import { RectMesh } from "../../objects/Rect";
 import Pencil from "./Pencil";
 
 export default class Render2d {

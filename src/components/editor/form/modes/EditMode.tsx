@@ -1,11 +1,10 @@
 import { Component, Accessor,Setter, Show } from 'solid-js'
 import { createSignal } from 'solid-js';
-import { Range } from '../form/input/Input';
-import {CollapseableMenu} from './Menu';
+import { Range } from '../input/Input';
+import {CollapseableMenu} from '../menu/Menu';
 
     
-const SelectFromArray: Component<{
-    type: string;
+const EditMode: Component<{
     length: number;
     setMode: (m: "Create" | 'Repeat' | 'Edit') => void;
     index: Accessor<number | undefined>;
@@ -17,8 +16,6 @@ const SelectFromArray: Component<{
         props.length === 1 ?
             props.setIndex(0) :
             props.setIndex(selectedIndex())
-            props.setMode('Edit')
-
     }} >
         <div>
             <p>count: {props.length}</p>
@@ -37,4 +34,4 @@ const SelectFromArray: Component<{
 
 
 
-export default SelectFromArray
+export default EditMode;

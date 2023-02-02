@@ -1,5 +1,5 @@
 import { Component, onMount } from 'solid-js'
-import GameEngine from '../../game-engine/initialize';
+import GameEngine from '../../game-engine';
 
 
 const Canvas: Component<{
