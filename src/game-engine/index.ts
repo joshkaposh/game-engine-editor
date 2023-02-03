@@ -54,7 +54,7 @@ class GameEngine {
 
     loop() {
         this.time.step();
-        this.renderer.render(this.dict.objects['RectMesh'] as any)
+        this.renderer.render(this.dict.objects['Rect'] as any)
 
         this.animationId = requestAnimationFrame(bind(this.loop, this))
     }

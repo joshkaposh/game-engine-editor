@@ -1,7 +1,6 @@
 import type { Component, Signal } from 'solid-js'
 import type { ClassKeys } from "../../../objects";
 import { Show } from 'solid-js';
-import RecurseEntries from './RecurseEntries';
 import CreateObjectBtn from './input/CreateObjectBtn';
 import { ToggleCheckbox } from './input/Input';
 import { builderSignals, builderEffects } from '../../signals/createBuilder';
@@ -9,6 +8,7 @@ import GameEngine from '../../../game-engine';
 import ObjectBuilder from "../ObjectBuilder";
 import RepeatMode from './modes/RepeatMode';
 import EditMode from './modes/EditMode';
+import RecurseEntries from './RecurseEntries';
 
 export type Paths = { [key: string]: string[]  }
 export type UnknownObject = { [key: string]: unknown }
@@ -48,9 +48,7 @@ const EditObjectForm: Component<FormProps & {
         </div>
         <hr class='form-section' />
         <RecurseEntries
-            builder={builder[0]()!}
-            config={builder[0]()!.root}
-            depth={0}
+            builder={props.builder[0]()!}
         />
         <hr class='form-section' />
         <div class='form-tools'>

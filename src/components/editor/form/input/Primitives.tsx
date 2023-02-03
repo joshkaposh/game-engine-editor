@@ -1,24 +1,28 @@
-import type { Accessor, Component } from "solid-js";
+import type { Component } from "solid-js";
 import { Match } from "solid-js";
-import { Color,Text,Number,Boolean, RepeatField } from "./Input";
+import { Color,Text,Number,Boolean } from "./Input";
 
 const MatchPrimitives: Component<{
-    relay: (value:string | number | boolean) => void;
-    entry: [string, any];
+    relay: (key:string,value:string | number | boolean) => void;
+    field: {
+        path: string[],
+        value:any
+    }
 }> = (props) => {
+        const key =props.field.path[props.field.path.length - 1]
 
     return (<>
-        <Match when={props.entry[0] === 'color'}>
-            <Color initialValue={props.entry[1]} relay={(value) => props.relay(value)} />
+        <Match when={key === 'color'}>
+            <Color initialValue={props.field.value} relay={(value) => props.relay(key,value)} />
         </Match>
-        <Match when={typeof props.entry[1] === 'string'}>
-            <Text initialValue={props.entry[1]} relay={(value) => props.relay(value)} />
+        <Match when={typeof props.field.value === 'string'}>
+            <Text initialValue={props.field.value} relay={(value) => props.relay(key,value)} />
         </Match>
-        <Match when={typeof props.entry[1] === 'number'}>
-            <Number initialValue={props.entry[1]} relay={(value) => props.relay(value)} />
+        <Match when={typeof props.field.value === 'number'}>
+            <Number initialValue={props.field.value} relay={(value) => props.relay(key,value)} />
         </Match>
-        <Match when={typeof props.entry[1] === 'boolean'}>
-            <Boolean initialValue={props.entry[1]} relay={(value) => props.relay(value)} />
+        <Match when={typeof props.field.value === 'boolean'}>
+            <Boolean initialValue={props.field.value} relay={(value) => props.relay(key,value)} />
         </Match>
     </>)
     }
