@@ -4,29 +4,38 @@ import { Show, createEffect, createSignal, on, } from "solid-js";
 import Select from "./Select";
 import EditObjectForm from './form/EditObjectForm';
 import Canvas from '../canvas/Canvas';
-import createSignals from '../signals/createEngineSignals';
+import engineEffects from '../../game-engine/signals';
 import GameEngine from '../../game-engine';
-import { Toggle } from './form/input/Input';
-import ObjectBuilder from './ObjectBuilder';
+import ObjectBuilder, { createPaths } from './ObjectBuilder';
 
 const Editor: Component<{
     engine: GameEngine
 }> = (props) => {
     const { dict } = props.engine
-    const { running } = createSignals(props.engine)
-    const builder = createSignal<ObjectBuilder | undefined>(undefined,{equals:false})
-    const selected = createSignal<ClassKeys | undefined>(undefined,{equals:false})
-
+    const { running } = engineEffects(props.engine)
+    const selected = createSignal<ClassKeys | undefined>(undefined, { equals: false })
+    const builder = createSignal<ObjectBuilder | undefined>(undefined, { equals: false })
+    const [fields, setFields] = createSignal<ReturnType<typeof createPaths> | undefined>(undefined, { equals: false })
     createEffect(on(selected[0], (type) => {
-        !type ?
-            builder[1]() :
+        if (!type) {
+            builder[1]()
+            setFields()
+
+        } else {
             builder[1](ObjectBuilder.new(type));
+            setFields(createPaths(builder[0]()!.root))
+        }
     }, { defer: true }))
 
     return <div id='editor'>
         <div>
             <ul class='engine-tools'>
-                <Toggle signal={running} on='Start' off='Stop' />
+                <button onclick={(e) => {
+                    e.preventDefault();
+                    running[1](!running[0]());
+                }}>
+                    {running[0]() ? 'Start' : 'Stop'}
+                </button>
             </ul>
             <hr />
             <Select types={Object.keys(dict.objects)} select={(type) => {
@@ -41,6 +50,7 @@ const Editor: Component<{
                     selected={selected}
                     builder={builder}
                     dict={dict}
+                    fields={fields()!}
                 />
             </Show>
         </div>

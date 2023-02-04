@@ -1,5 +1,5 @@
-import type { ParentComponent,Component, Accessor, JSXElement, Setter , ChildrenReturn, Signal } from "solid-js";
-import { createSignal,children,Show } from "solid-js";
+import type { Component, Signal } from "solid-js";
+import { createSignal } from "solid-js";
 
 type Relay<T extends unknown> = (value: T) => void;
 type InputProps<T extends unknown> = {
@@ -21,44 +21,14 @@ type NumberProps = InputProps<number> & {
 };
 
 
-function inputSignal<T extends unknown>(initialValue:T,potentialSignal?:Signal<T>) {
-    if (!potentialSignal) 
+function inputSignal<T extends unknown>(initialValue: T, potentialSignal?: Signal<T>) {
+    if (!potentialSignal)
         return createSignal(initialValue)
     return potentialSignal
 }
 
-export const Label: Component<{
-    for:string
-}> = (props) => <label>{props.for}</label>
-
-export const RepeatField: ParentComponent<{
-    repeat: Accessor<boolean>;
-    input:JSXElement
-}> = (props) => {
-    const c = children(() => props.children)
-    const r = children(() => props.input)
-    return <>
-        {c}
-        <Show when={props.repeat()}>
-            {r}
-        </Show>
-        <br />
-
-    </>
-}
-
-export const Field: ParentComponent = (props) => {
-    const c = children(() => props.children)
-    return <>
-        {c}
-        <br />
-    </>
-}
-
 export const Boolean: Component<BooleanProps> = (props) => {
-    const signal = inputSignal(props.initialValue ?? false,props.signal)
-
-
+    const signal = inputSignal(props.initialValue ?? false, props.signal)
     return <input type="checkbox" checked={signal[0]()} onchange={(e) => {
         e.preventDefault();
         signal[1](!signal[0]())
@@ -69,22 +39,21 @@ export const Boolean: Component<BooleanProps> = (props) => {
 }
 
 export const Number: Component<NumberProps> = (props) => {
-    
-    const signal = inputSignal(props.initialValue ?? 0,props.signal)
+    const signal = inputSignal(props.initialValue ?? 0, props.signal)
 
     return <input type='number' min={props.min} max={props.max} class={props.class} value={signal[0]()} oninput={(e) => {
         e.preventDefault();
         e.currentTarget.value.charAt(0) !== '' ?
             signal[1](parseInt(e.currentTarget.value)) :
             signal[1](0)
-        
+
         props.relay && props.relay(signal[0]())
-        
+
     }} />
 }
 
 export const Text: Component<TextProps> = (props) => {
-    const signal = inputSignal(props.initialValue ?? '',props.signal)
+    const signal = inputSignal(props.initialValue ?? '', props.signal)
 
     return <input type="text" value={props.initialValue} oninput={(e) => {
         e.preventDefault();
@@ -94,9 +63,8 @@ export const Text: Component<TextProps> = (props) => {
 }
 
 export const Color: Component<TextProps> = (props) => {
-    console.log('Color Input',props.initialValue);
-    
     const signal = inputSignal(props.initialValue ?? '#fff', props.signal)
+
     return <input type="color" value={signal[0]()} oninput={(e) => {
         e.preventDefault();
         signal[1](e.currentTarget.value)
@@ -104,64 +72,31 @@ export const Color: Component<TextProps> = (props) => {
     }} />
 }
 
-export const Button: Component<{
-    handleClick: (e: MouseEvent & {
-        currentTarget: HTMLButtonElement;
-        target: Element;
-    }) => void;
-    type?: 'button' | 'submit' | 'reset';
-    children?: JSXElement;
-    class?: string;
-
-}> = (props) => {
-    const c = children(() => props.children)
-    return <button type={props.type} class={props.class} onclick={props.handleClick}>{c}</button>
-}
-
-
 export const Range: Component<RangeProps> = (props) => {
-    const signal = inputSignal(props.initialValue ?? 0,props.signal)
+    const signal = inputSignal(props.initialValue ?? 0, props.signal)
 
     return <>
         <input
-        type='range'
-        value={signal[0]()}
-        onchange={(e) => {
-            e.preventDefault();
-            signal[1](parseInt(e.currentTarget.value))
-            props.relay && props.relay(parseInt(e.currentTarget.value))
-        }}
-        min={Math.floor(props.min)}
-        max={Math.floor(props.max)}
+            type='range'
+            value={signal[0]()}
+            onchange={(e) => {
+                e.preventDefault();
+                signal[1](parseInt(e.currentTarget.value))
+                props.relay && props.relay(parseInt(e.currentTarget.value))
+            }}
+            min={Math.floor(props.min)}
+            max={Math.floor(props.max)}
         />
     </>
 }
 
 
-export const ToggleCheckbox: Component<{
-    signal: Signal<boolean>
-    text: string;
-}> = ({text,signal}) => {
-    
-    return <div>
-        <label>{text}</label>
-        <input type="checkbox" checked={signal[0]()} onchange={(e) => {
-            e.preventDefault();
-            signal[1](!signal[0]())
-        }} />
-    </div>
-}
+export const Checkbox: Component<BooleanProps> = (props) => {
+    const signal = inputSignal(props.initialValue ?? false, props.signal)
 
-export const Toggle: Component<{
-    signal: Signal<boolean>
-    on?: string;
-    off?: string
-}> = ({signal,on = 'on',off = 'off'}) => {
-    
-    return <button type='button' onclick={(e) => {
-            e.preventDefault();
-            signal[1](!signal[0]());
-        }}>
-            {signal[0]() ? off : on}
-        </button>
+    return <input type="checkbox" checked={signal[0]()} onchange={(e) => {
+        e.preventDefault();
+        signal[1](!signal[0]())
+        props.relay && props.relay(signal[0]())
+    }} />
 }

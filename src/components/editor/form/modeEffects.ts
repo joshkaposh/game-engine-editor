@@ -1,10 +1,10 @@
-import type { ClassKeys,ClassTypes } from "../../objects";
+import type { ClassKeys, ClassTypes } from "../../../objects";
 import { createSignal, createEffect, on, Signal } from "solid-js";
-import GameEngine from "../../game-engine";
-import ObjectBuilder from "../editor/ObjectBuilder";
+import GameEngine from "../../../game-engine";
+import ObjectBuilder from "../ObjectBuilder";
 import { createStore } from "solid-js/store";
 
-export const builderSignals = () => {
+const modeSignals = () => {
     const mode = createSignal<'Create' | 'Repeat' | 'Edit'>('Create', { equals: false })
     //*keep previous values
     const keep = createSignal(false);
@@ -21,20 +21,22 @@ export const builderSignals = () => {
         keep,
         index,
         selectedObject,
-        repeat:{gap,count,enabled}
+        repeat: { gap, count, enabled }
     }
 
 }
 
-export const builderEffects = (dict: GameEngine['dict'], signals: ReturnType<typeof builderSignals> & {
+export const modeEffects = (dict: GameEngine['dict'], signals: {
     selected: Signal<ClassKeys | undefined>;
     builder: Signal<ObjectBuilder | undefined>
 }) => {
-    const { mode, index, selected, builder,repeat:{enabled},selectedObject } = signals;
+    const mode_signals = modeSignals()
+    const { selectedObject, index, mode, repeat: { enabled } } = mode_signals
+    const { selected, builder } = signals;
     const { objects } = dict
 
     createEffect(() => {
-        console.log('SelectedObject: ',selectedObject[0]());
+        console.log('SelectedObject: ', selectedObject[0]());
     })
 
     createEffect(on(index[0], (i) => {
@@ -48,15 +50,15 @@ export const builderEffects = (dict: GameEngine['dict'], signals: ReturnType<typ
         selectedObject[1]()
         mode[1]('Create')
     }, { defer: true }))
-    
+
     createEffect(on(enabled[0], r => {
         if (r) mode[1]('Repeat');
         else mode[1]('Create')
     }, { defer: true }))
 
     createEffect(() => {
-        console.log('Mode was changed to:',mode[0]());
+        console.log('Mode was changed to:', mode[0]());
     })
 
-    return signals
+    return { ...signals, ...mode_signals }
 }

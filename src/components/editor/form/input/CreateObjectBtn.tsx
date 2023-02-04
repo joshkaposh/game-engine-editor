@@ -1,31 +1,26 @@
-import type { Accessor, Component,Setter,Signal  } from "solid-js";
-import ObjectBuilder from "../../ObjectBuilder";
+import type { Accessor, Component } from "solid-js";
 
 const CreateObjectBtn: Component<{
     mode: Accessor<'Create' | 'Repeat' | 'Edit'>;
-    setRepeat: Setter<boolean>;
-    setIndex: Setter<number | undefined>;
+    edit: () => void;
+    repeat: () => void;
     create: () => void;
-    createMany: () => void;
 }> = (props) => {
-    const {mode,setIndex,setRepeat,create,createMany } = props;
+    const { mode, edit, repeat, create } = props;
     return <button type="submit" onclick={(e) => {
         e.preventDefault();
         switch (mode()) {
             case 'Edit':
-                console.log('Create::Edit Ran');
-                setIndex();
+                edit()
                 return;
             case 'Repeat':
-                console.log('Create::Repeat Ran');
-                createMany()
-                setRepeat(false)
+                repeat();
                 return;
             case 'Create':
-                create()
+                create();
                 return;
             default:
-                throw new Error('No mode was found :' + mode())
+                throw new Error('No mode was found : ' + mode())
         }
     }}>
         {mode() === 'Edit' ? 'Finish' : mode()}

@@ -1,131 +1,118 @@
-import type {  Setter } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import type { Paths } from "./form/EditObjectForm";
-import type { ClassKeys,ClassTypes } from "../../objects";
-import type { Config } from "../../game-engine/game-object";
+import type { ClassKeys, ClassTypes } from "../../objects";
 import { createStore, produce } from "solid-js/store";
 import objects from "../../objects";
 
 type Indexable = { [key: string]: any }
-type Root = Config & Indexable
-export type SetBuilder = Setter<ObjectBuilder | undefined>;
-
-const setPathKeys = (root:{[key:string]:any},setPaths:SetStoreFunction<Paths>) => {
+type Fields = {
+    path: string[];
+    value: unknown;
+}[]
+// TODO: remove
+const setPathKeys = (root: { [key: string]: any }, setPaths: SetStoreFunction<Paths>) => {
     const entries = Object.entries(root)
     for (const entry of entries) {
         if (canRecurse(entry[1])) {
-            setPaths(entry[0],[])
+            setPaths(entry[0], [])
         }
     }
 }
 
-const primitives = (entry:[string,unknown]) => {
-    if (entry[0] === 'color' ||
-        typeof entry[1] === 'string' ||
-        typeof entry[1] === 'number' || 
-        typeof entry[1] === 'boolean'
-    ) {
-        return true;
-    }
-    return false;
-}
 export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
-export const canEdit = (key:string) => key !== 'id' && key !== 'goName' && key !== 'coName'
+export const canEdit = (key: string) => key !== 'id' && key !== 'goName' && key !== 'coName'
 
 
-class D {
-    name: string;
-    constructor(name: string) {
-        this.name = name;
+const checkPaths = (first: string[], second: string[]) => {
+    const output = [];
+    if (first.length === 1) {
+        return first
     }
-}
-
-
-class C {
-    d1: D;
-    d2: D;
-    constructor(d1:D,d2:D) {
-        this.d1 = d1;
-        this.d2 = d2;
-    }
-}
-
-class B {
-    c1:C; 
-    c2:C
-    constructor(c1:C,c2:C) {
-        this.c1 = c1;
-        this.c2 = c2
-    }
-}
-
-const a = {
-    b1: new B(
-        new C(
-            new D('b1-c1-d1-value'),
-            new D('b1-c1-d2-value')
-        ),
-        new C(
-            new D('b1-c2-d3-value'),
-            new D('b1-c2-d4-value')
-        ),
-    ),
-    b2: new B(
-        new C(
-            new D('b2-c1-d5-value'),
-            new D('b2-c1-d6-value')
-        ),
-        new C(
-            new D('b2-c2-d7-value'),
-            new D('b2-c2-d8-value')
-        ),
-        )
-}
-
-const flatten = (obj: Indexable) => {
-const output:Indexable = {}
-const recursive = (obj: Indexable, parentKey:string) => {
-    for (let key in obj) {
-        if (typeof obj[key] === 'object') {
-            recursive(obj[key],`${parentKey}/${key}`)
+    let matched = true;
+    for (let i = 0; i < first.length - 1; i++) {
+        if (first[i] === second[i]) {
+            output.push(first[i])
         } else {
-            output[`${parentKey}/${key}`] = obj[key]
+            matched = false
         }
     }
+    if (matched) {
+        output.push([first[first.length - 1], second[second.length - 1]])
+        console.log('matched: ', output);
+
+        return output;
     }
-    recursive(obj, 'root')
-    
+}
+
+const recursePaths = (object: object): { [key: string]: unknown } => {
+    const output: Indexable = {}
+    function recurse(obj: Indexable, parentKey = 'root') {
+        for (let key in obj) {
+            if (typeof obj[key] === 'object') {
+                recurse(obj[key], `${parentKey}/${key}`)
+            } else output[`${parentKey}/${key}`] = obj[key]
+        }
+    }
+    recurse(object)
     return output
 }
 
-export function createPaths(obj: Indexable): {path:string[],value:any}[] {
-    const input = flatten(obj)
-    const keys = Object.keys(input);
+export function groupPaths(input: ReturnType<typeof createPaths>) {
+    const output = []
+    let current, next;
+    // console.log('group-paths', input);
+    // console.log('Length', input.length);
+
+    for (let i = 0; i < input.length; i++) {
+        if (i + 1 <= input.length - 1) {
+            current = input[i];
+            next = input[i + 1];
+            // console.log('current', current.path);
+            // console.log('next', next.path);
+            if (current.path.length === next.path.length) {
+                if (current.path.length === 1) {
+                    output.push(current.path)
+                } else {
+                    const result = checkPaths(current.path, next.path)
+                    if (result) output.push(result)
+                    else {
+                        output.push(current.path)
+                        output.push(next.path)
+                    }
+                }
+            }
+        } else {
+            output.push(input[i].path)
+        }
+    }
+    return output;
+}
+
+export function createPaths(obj: object): Fields {
+    const paths = recursePaths(obj)
+    const keys = Object.keys(paths);
     const output = [];
     for (let i = 0; i < keys.length; i++) {
-        const split = keys[i].split('/')
-        if (split[0] === 'root') {
-            split.shift();
+        const path = keys[i].split('/')
+        if (path[0] === 'root') {
+            path.shift();
         }
         output.push({
-            path: split,
-            value: input[keys[i]]
-        }) 
+            path,
+            value: paths[keys[i]]
+        })
     }
     return output;
 
 }
- 
-const output = createPaths(a)
-console.log(output)
+
+// TODO: refactor edit to take in new pathing
 
 export default class ObjectBuilder {
     #type!: ClassKeys;
-    #root!: Root;
+    #root!: Indexable;
     #paths!: Paths;
     #setPaths!: SetStoreFunction<Paths>
-    #paths2!: Paths;
-    #setPaths2!: SetStoreFunction<Paths>
 
     private constructor(type: ClassKeys | ClassTypes, options?: {
         previous?: ObjectBuilder,
@@ -143,10 +130,6 @@ export default class ObjectBuilder {
         return this.#paths;
     }
 
-    get paths2() {
-        return this.#paths2;
-    }
-
     get type() {
         return this.#type
     }
@@ -155,16 +138,7 @@ export default class ObjectBuilder {
         return this.#root;
     }
 
-    getProperty(path: string[]) {
-        console.log(path)
-        let temp = this.#root
-        for (let i = 0; i < path.length; i++) {
-            temp = temp[path[i]]
-        }
-    }
-
-    
-    updateProperty(path: string[],key:string,value:any) {
+    updateProperty(path: string[], key: string, value: any) {
         let temp = this.#root
         for (let i = 0; i < path.length - 1; i++) {
             temp = temp[path[i]]
@@ -180,18 +154,18 @@ export default class ObjectBuilder {
     static new(type: ClassKeys) {
         return new ObjectBuilder(type)
     }
-    
+
     static edit(type: ClassTypes) {
         return new ObjectBuilder(type)
     }
-    
+
     static keep(builder: ObjectBuilder) {
         return new ObjectBuilder(builder.type, { previous: builder })
     }
 
-    static repeat(builder: ObjectBuilder,add:(type:ClassTypes)=>void,{ count, gap }: { count: number, gap: { x: number; y:number}}) {
-        console.log('Count = ',count);
-        console.log('Gap.x = %s, Gap.y = %s',gap.x,gap.y);
+    static repeat(builder: ObjectBuilder, add: (type: ClassTypes) => void, { count, gap }: { count: number, gap: { x: number; y: number } }) {
+        console.log('Count = ', count);
+        console.log('Gap.x = %s, Gap.y = %s', gap.x, gap.y);
         let temp = builder;
         for (let i = 1; i <= count; i++) {
             console.log('Before', temp.root);
@@ -203,34 +177,23 @@ export default class ObjectBuilder {
         console.log(builder.root);
     }
 
-    offset(x:number,y:number) {
-        this.#root.transform.pos.addX(x) 
+    offset(x: number, y: number) {
+        this.#root.transform.pos.addX(x)
         this.#root.transform.pos.addY(y)
     }
 
-    edit(key: string, value: string | number | boolean,rootKey?:string) {
+    edit(key: string, value: string | number | boolean, rootKey?: string) {
         if (!rootKey) {
-            this.#editProperty(key, value)
+            this.#root[key] = value
             return;
         }
-        this.#editPropertyPath(rootKey,key,value)
+        this.#editPropertyPath(rootKey, key, value)
     }
 
-    addToPath(rootKey: string, entry: [string,unknown]) {
+    addToPath(rootKey: string, entry: [string, unknown]) {
         this.#setPaths(produce(
             paths => paths[rootKey].push(entry[0])
         ))
-        // this.#setPaths2(produce(
-        //     paths => {
-        //         entry[1]
-        //     }
-        //     ))
-    }
-
-    enterObject(entry: [string,unknown]) {
-        // if () {
-            
-        // }
     }
 
     #copy(previous: ObjectBuilder) {
@@ -239,18 +202,18 @@ export default class ObjectBuilder {
             const key = rEntries[i][0]
             const value = rEntries[i][1]
             if (canEdit(key) && !canRecurse(value)) {
-                this.#editPrevious(previous.paths,key,value)
-            } else this.#_copy(previous, value,key)
+                this.#editPrevious(previous.paths, key, value)
+            } else this.#_copy(previous, value, key)
         }
     }
 
-    #_copy(previous:ObjectBuilder,value:object,rootKey:string) {
+    #_copy(previous: ObjectBuilder, value: object, rootKey: string) {
         const temp = Object.entries(value);
         for (let i = 0; i < temp.length; i++) {
             if (canRecurse(temp[i][1]) && canEdit(temp[i][0])) {
-                this.#_copy(previous,temp[i][1],rootKey)
+                this.#_copy(previous, temp[i][1], rootKey)
             } else {
-                this.#editPrevious(previous.paths,temp[i][0], temp[i][1], rootKey)
+                this.#editPrevious(previous.paths, temp[i][0], temp[i][1], rootKey)
             }
         }
     }
@@ -265,47 +228,37 @@ export default class ObjectBuilder {
         this.#type = type.goName as ClassKeys;
         this.#root = type;
         this.#resetPaths()
-        
+
     }
 
     #resetPaths() {
-        const [paths,setPaths] = createStore<Paths>({})
-        const [paths2,setPaths2] = createStore<Paths>({})
-
+        const [paths, setPaths] = createStore<Paths>({})
         this.#paths = paths;
         this.#setPaths = setPaths
-        this.#paths2 = paths2;
-        this.#setPaths2 = setPaths2;
         setPathKeys(this.#root, setPaths)
-        setPathKeys(this.#root,setPaths2)
-        console.log('resetPaths::', this.#paths);
     }
 
-    #editPrevious(paths:Paths,key: string, value: string | number | boolean,rootKey?:string) {
+    #editPrevious(paths: Paths, key: string, value: string | number | boolean, rootKey?: string) {
         if (!rootKey) {
-            this.#editProperty(key,value)
+            this.#root[key] = value
             return;
         }
-        this.#editPropertyPath(rootKey,key,value,paths[rootKey])       
+        this.#editPropertyPath(rootKey, key, value, paths[rootKey])
     }
 
-    #editProperty(key:string,value:unknown) {
-        this.#root[key] = value
-    }
+    #editPropertyPath(rootKey: string, key: string, value: string | number | boolean, path = this.#paths[rootKey]) {
 
-    #editPropertyPath(rootKey: string, key: string, value: string | number | boolean,path = this.#paths[rootKey]) {
-        
         if (path.length === 0) {
             this.#root[rootKey][key] = value
-            return;   
+            return;
         }
         let temp = this.#root[rootKey]
-        console.log('Temp:',temp);
-        
+        console.log('Temp:', temp);
+
         for (let i = 0; i < path.length; i++) {
             console.log(path[i]);
             temp = temp[path[i]]
-            console.log('Temp:',temp);
+            console.log('Temp:', temp);
         }
         temp[key] = value;
     }

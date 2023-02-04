@@ -4,28 +4,28 @@ import GameObject from "./game-object";
 import Render2d from "./render/Render2d";
 import Time from "./time/Time";
 
-export type LengthStore = Store<{[key:string]:number}>
+export type LengthStore = Store<{ [key: string]: number }>
 export type ObjectDict = ReturnType<typeof toDict>[0];
-const bind = (fn:(...args:any) => void,to:object) => fn.bind(to)
+const bind = (fn: (...args: any) => void, to: object) => fn.bind(to)
 
 class Dict {
     objects: ObjectDict
     lengthStore: LengthStore
     setLength: (key: string, length: number) => void;
     constructor() {
-        const [dict,lengths] = toDict()
+        const [dict, lengths] = toDict()
         this.objects = dict
         this.lengthStore = lengths[0]
         this.setLength = (key: string, length: number) => {
-            lengths[1](key,length)
+            lengths[1](key, length)
         }
     }
-    
+
     add(gameObject: GameObject) {
         if (gameObject.goName in this.objects) {
-            const arr = this.objects[gameObject.goName] 
+            const arr = this.objects[gameObject.goName]
             arr.push(gameObject)
-            this.setLength(gameObject.goName,arr.length)
+            this.setLength(gameObject.goName, arr.length)
 
         }
         console.log(this.objects);
@@ -60,7 +60,7 @@ class GameEngine {
     }
 
     start() {
-        this.animationId = requestAnimationFrame(bind(this.loop,this))
+        this.animationId = requestAnimationFrame(bind(this.loop, this))
     }
 
     stop() {
@@ -68,6 +68,6 @@ class GameEngine {
     }
 }
 
-    
+
 
 export default GameEngine
