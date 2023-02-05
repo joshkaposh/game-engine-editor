@@ -40,21 +40,6 @@ function iter_reverse<T extends any>(arr: T[], callback: (element: T, index: num
     }
 }
 
-const recursePaths = <T extends any>(object: object): { [key: string]: T } => {
-    const output: {
-        [key: string]: T
-    } = {}
-    function recurse(obj: Indexable, parentKey = 'root') {
-        for (let key in obj) {
-            if (typeof obj[key] === 'object') {
-                recurse(obj[key], `${parentKey}/${key}`)
-            } else output[`${parentKey}/${key}`] = obj[key]
-        }
-    }
-    recurse(object)
-    return output
-}
-
 export const normalizeKey = (str: string) => {
     const split = str.split('/')
     if (split[0] === 'root') {
@@ -86,6 +71,7 @@ export function group(obj: object) {
     const paths = recurseGroupPaths(obj)
     const merge = new Map()
     const unmerged: [string, string, unknown][] = [];
+    // TODO: make into normal loop
     iter_reverse(paths, (current, i) => {
         if (current[0] === '') {
             unmerged.push(current)
@@ -117,26 +103,6 @@ export function group(obj: object) {
     }
 
     return final
-}
-
-export function createPaths<T extends unknown>(obj: object): Fields<T> {
-    const paths = recursePaths(obj)
-    const keys = Object.keys(paths);
-    const fields: Fields<T> = []
-    for (let i = 0; i < keys.length; i++) {
-        const path = keys[i].split('/')
-        if (path[0] === 'root') {
-            path.shift();
-        }
-        const current = {
-            path,
-            value: paths[keys[i]] as T
-        }
-        fields.push(current)
-
-    }
-
-    return fields;
 }
 
 // TODO: refactor edit to take in new pathing

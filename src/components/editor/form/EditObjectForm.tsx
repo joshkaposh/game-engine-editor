@@ -7,20 +7,17 @@ import RepeatMode from './modes/RepeatMode';
 import EditMode from './modes/EditMode';
 import Entries from './Entries';
 import GameEngine from '../../../game-engine';
-import ObjectBuilder, { Fields } from "../ObjectBuilder";
+import ObjectBuilder from "../ObjectBuilder";
 import { modeEffects } from './modeEffects';
 
 export type Paths = { [key: string]: string[] }
 export type UnknownObject = { [key: string]: unknown }
 
-export interface FormProps {
-    builder: Signal<ObjectBuilder | undefined>
-    selected: Signal<ClassKeys | undefined>
-}
-
-const EditObjectForm: Component<FormProps & {
+const EditObjectForm: Component<{
     length: number;
     dict: GameEngine['dict']
+    builder: Signal<ObjectBuilder | undefined>
+    selected: Signal<ClassKeys | undefined>
     fields: ([string, string, unknown] | [string, string[], unknown[]])[];
 
 }> = (props) => {
@@ -47,10 +44,12 @@ const EditObjectForm: Component<FormProps & {
             </ul>
         </div>
         <hr class='form-section' />
-        <Entries
-            builder={props.builder[0]()!}
-            fields={props.fields}
-        />
+        <div class='form-entries'>
+            <Entries
+                builder={props.builder[0]()!}
+                fields={props.fields}
+            />
+        </div>
         <hr class='form-section' />
         <div class='form-tools'>
             <div>
@@ -66,20 +65,17 @@ const EditObjectForm: Component<FormProps & {
         </div>
         <CreateObjectBtn
             mode={mode[0]}
+            text={mode[0]() === 'Edit' ? 'Finish' : mode[0]()}
             create={() => {
                 const b = builder[0]()!
                 dict.add(b.build())
                 resetBuilder(b)
             }}
             edit={() => {
-                console.log('Create::Edit Ran');
                 index[1]();
             }}
             repeat={() => {
-                console.log('Create::Repeat Ran');
-                console.log('Create Many!');
                 if (repeat.count[0]() === 0) return
-
                 ObjectBuilder.repeat(builder[0]()!, (go) => dict.add(go), {
                     count: repeat.count[0](),
                     gap: repeat.gap[0]

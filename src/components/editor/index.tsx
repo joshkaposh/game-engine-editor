@@ -41,7 +41,6 @@ const Editor: Component<{
         } else {
             builder[1](ObjectBuilder.new(type));
             setFields(group(builder[0]()!.root))
-            console.log('GROUP', fields())
         }
     }, { defer: true }))
 
@@ -59,7 +58,7 @@ const Editor: Component<{
             <Select types={Object.keys(dict.objects)} select={(type) => {
                 type === selected[0]() ?
                     selected[1](undefined) :
-                    selected[1](type)
+                    selected[1](type as ClassKeys)
             }}
             />
             <Show when={selected[0]() && builder[0]()}>
