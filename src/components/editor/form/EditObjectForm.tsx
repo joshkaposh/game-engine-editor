@@ -7,7 +7,7 @@ import RepeatMode from './modes/RepeatMode';
 import EditMode from './modes/EditMode';
 import Entries from './Entries';
 import GameEngine from '../../../game-engine';
-import ObjectBuilder, { createPaths, groupPaths } from "../ObjectBuilder";
+import ObjectBuilder, { Fields } from "../ObjectBuilder";
 import { modeEffects } from './modeEffects';
 
 export type Paths = { [key: string]: string[] }
@@ -21,16 +21,11 @@ export interface FormProps {
 const EditObjectForm: Component<FormProps & {
     length: number;
     dict: GameEngine['dict']
-    fields: {
-        path: string[],
-        value: unknown
-    }[]
+    fields: ([string, string, unknown] | [string, string[], unknown[]])[];
 
 }> = (props) => {
     const { dict, builder, selected } = props
     const { mode, keep, index, repeat } = modeEffects(props.dict, { builder, selected })
-    // const grouped = groupPaths(props.fields)
-    // console.log('Final Output', grouped)
     const resetBuilder = (b: ObjectBuilder) => {
         !keep[0]() ?
             builder[1](ObjectBuilder.new(b.type)) :

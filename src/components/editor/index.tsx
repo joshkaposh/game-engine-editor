@@ -4,9 +4,26 @@ import { Show, createEffect, createSignal, on, } from "solid-js";
 import Select from "./Select";
 import EditObjectForm from './form/EditObjectForm';
 import Canvas from '../canvas/Canvas';
-import engineEffects from '../../game-engine/signals';
 import GameEngine from '../../game-engine';
-import ObjectBuilder, { createPaths } from './ObjectBuilder';
+import ObjectBuilder, { group } from './ObjectBuilder';
+
+const engineSignals = () => {
+    const running = createSignal(false)
+    return {
+        running,
+    }
+}
+
+const engineEffects = (engine: GameEngine) => {
+    const signals = engineSignals()
+
+    createEffect(() => {
+        signals.running[0]() ?
+            engine.start() :
+            engine.stop();
+    })
+    return signals
+}
 
 const Editor: Component<{
     engine: GameEngine
@@ -15,7 +32,7 @@ const Editor: Component<{
     const { running } = engineEffects(props.engine)
     const selected = createSignal<ClassKeys | undefined>(undefined, { equals: false })
     const builder = createSignal<ObjectBuilder | undefined>(undefined, { equals: false })
-    const [fields, setFields] = createSignal<ReturnType<typeof createPaths> | undefined>(undefined, { equals: false })
+    const [fields, setFields] = createSignal<ReturnType<typeof group> | undefined>(undefined, { equals: false })
     createEffect(on(selected[0], (type) => {
         if (!type) {
             builder[1]()
@@ -23,7 +40,8 @@ const Editor: Component<{
 
         } else {
             builder[1](ObjectBuilder.new(type));
-            setFields(createPaths(builder[0]()!.root))
+            setFields(group(builder[0]()!.root))
+            console.log('GROUP', fields())
         }
     }, { defer: true }))
 
@@ -50,7 +68,7 @@ const Editor: Component<{
                     selected={selected}
                     builder={builder}
                     dict={dict}
-                    fields={fields()!}
+                    fields={fields()! as any}
                 />
             </Show>
         </div>

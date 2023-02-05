@@ -5,10 +5,22 @@ import { createStore, produce } from "solid-js/store";
 import objects from "../../objects";
 
 type Indexable = { [key: string]: any }
-type Fields = {
+
+export type Field<T extends unknown> = {
     path: string[];
-    value: unknown;
-}[]
+    value: T;
+
+}
+
+export type GroupedField<T extends unknown> = {
+    path: (string | string[])[];
+    value: T | T[];
+    remove?: boolean;
+}
+
+export type Fields<T extends unknown> = Field<T>[]
+export type GroupedFields<T extends unknown> = GroupedField<T>[]
+
 // TODO: remove
 const setPathKeys = (root: { [key: string]: any }, setPaths: SetStoreFunction<Paths>) => {
     const entries = Object.entries(root)
@@ -22,30 +34,16 @@ const setPathKeys = (root: { [key: string]: any }, setPaths: SetStoreFunction<Pa
 export const canRecurse = (property: unknown) => typeof property === 'object' && !Array.isArray(property)
 export const canEdit = (key: string) => key !== 'id' && key !== 'goName' && key !== 'coName'
 
-
-const checkPaths = (first: string[], second: string[]) => {
-    const output = [];
-    if (first.length === 1) {
-        return first
-    }
-    let matched = true;
-    for (let i = 0; i < first.length - 1; i++) {
-        if (first[i] === second[i]) {
-            output.push(first[i])
-        } else {
-            matched = false
-        }
-    }
-    if (matched) {
-        output.push([first[first.length - 1], second[second.length - 1]])
-        console.log('matched: ', output);
-
-        return output;
+function iter_reverse<T extends any>(arr: T[], callback: (element: T, index: number) => void) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+        callback(arr[i], i)
     }
 }
 
-const recursePaths = (object: object): { [key: string]: unknown } => {
-    const output: Indexable = {}
+const recursePaths = <T extends any>(object: object): { [key: string]: T } => {
+    const output: {
+        [key: string]: T
+    } = {}
     function recurse(obj: Indexable, parentKey = 'root') {
         for (let key in obj) {
             if (typeof obj[key] === 'object') {
@@ -57,53 +55,88 @@ const recursePaths = (object: object): { [key: string]: unknown } => {
     return output
 }
 
-export function groupPaths(input: ReturnType<typeof createPaths>) {
-    const output = []
-    let current, next;
-    // console.log('group-paths', input);
-    // console.log('Length', input.length);
+export const normalizeKey = (str: string) => {
+    const split = str.split('/')
+    if (split[0] === 'root') {
+        split.shift();
+    }
+    return split;
+}
 
-    for (let i = 0; i < input.length; i++) {
-        if (i + 1 <= input.length - 1) {
-            current = input[i];
-            next = input[i + 1];
-            // console.log('current', current.path);
-            // console.log('next', next.path);
-            if (current.path.length === next.path.length) {
-                if (current.path.length === 1) {
-                    output.push(current.path)
-                } else {
-                    const result = checkPaths(current.path, next.path)
-                    if (result) output.push(result)
-                    else {
-                        output.push(current.path)
-                        output.push(next.path)
-                    }
-                }
+const recurseGroupPaths = <T extends any>(object: object): [string, string, T][] => {
+    const output: [string, string, T][] = []
+    function recurse(obj: Indexable, parentKey = 'root') {
+        for (let key in obj) {
+            const replacement = `${parentKey}/${key}`
+            if (typeof obj[key] === 'object') {
+                recurse(obj[key], replacement)
+            } else {
+                const path = normalizeKey(replacement)
+                const last = path[path.length - 1]
+                path.pop();
+                output.push([path.join('/'), last, obj[key]])
             }
-        } else {
-            output.push(input[i].path)
         }
     }
+    recurse(object)
     return output;
 }
 
-export function createPaths(obj: object): Fields {
+export function group(obj: object) {
+    const paths = recurseGroupPaths(obj)
+    const merge = new Map()
+    const unmerged: [string, string, unknown][] = [];
+    iter_reverse(paths, (current, i) => {
+        if (current[0] === '') {
+            unmerged.push(current)
+        }
+        if (i + 1 <= paths.length - 1) {
+            const prev = paths[i + 1]
+
+            if (current[0] === prev[0] && current[0] !== '') {
+                if (!merge.has(current[0])) {
+                    merge.set(current[0], [
+                        [current[1], prev[1]],
+                        [current[2], current[2]]
+                    ] as const)
+                } else {
+                    const value = merge.get(current[0])
+                    value[0].unshift(current[1])
+                    value[1].unshift(current[2])
+                }
+            }
+        }
+    })
+    const final: ([string, string, unknown] | [string, string[], unknown[]])[] = [];
+    for (const [key, value] of merge.entries()) {
+        final.push([key, value[0], value[1]])
+    }
+    final.reverse()
+    for (const el of unmerged) {
+        final.push([el[0], el[1], el[2]])
+    }
+
+    return final
+}
+
+export function createPaths<T extends unknown>(obj: object): Fields<T> {
     const paths = recursePaths(obj)
     const keys = Object.keys(paths);
-    const output = [];
+    const fields: Fields<T> = []
     for (let i = 0; i < keys.length; i++) {
         const path = keys[i].split('/')
         if (path[0] === 'root') {
             path.shift();
         }
-        output.push({
+        const current = {
             path,
-            value: paths[keys[i]]
-        })
-    }
-    return output;
+            value: paths[keys[i]] as T
+        }
+        fields.push(current)
 
+    }
+
+    return fields;
 }
 
 // TODO: refactor edit to take in new pathing
@@ -138,13 +171,36 @@ export default class ObjectBuilder {
         return this.#root;
     }
 
-    updateProperty(path: string[], key: string, value: any) {
-        let temp = this.#root
-        for (let i = 0; i < path.length - 1; i++) {
-            temp = temp[path[i]]
+    updateProperty(path: string | string[], key: string, value: any) {
+        console.log(path);
+
+        if (path === '') {
+            console.log('ROOT', path);
+
+            this.#root[key] = value;
+            console.log(this.#root);
+            return
         }
-        temp[key] = value
-        console.log(this.#root);
+        if (!Array.isArray(path)) {
+            console.log('SINGLE', path);
+
+            this.#root[path][key] = value;
+            console.log(this.#root);
+
+        } else {
+            console.log('ARRAY', path);
+            let temp = this.#root
+            for (let i = 0; i < path.length; i++) {
+                temp = temp[path[i]]
+            }
+            console.log(temp);
+
+            temp[key] = value
+
+            console.log(this.#root);
+            return;
+        }
+
     }
 
     build() {
